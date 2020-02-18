@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /archives/
+Allow: /categories/
+Allow: /tags/ 
+Allow: /gallery/ 
+Disallow: /js/
+Disallow: /css/
+Disallow: /fonts/
+
+Sitemap: http://huangbin.fun/sitemap.xml
