@@ -1,3 +1,5 @@
+http://www.huangbin.fun/LeetCode-最长回文子串.html
+http://www.huangbin.fun/初探动态规划算法.html
 http://www.huangbin.fun/LeetCode-最长公共前缀.html
 http://www.huangbin.fun/LeetCode-无重复字符的最长子串长度.html
 http://www.huangbin.fun/吴恩达机器学习课程练习代码实现-Octave版-Python版.html
