@@ -1,0 +1,144 @@
+<!DOCTYPE html><html lang="en"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="Redis其他特性和功能"><meta name="keywords" content="Redis"><meta name="author" content="HB"><meta name="copyright" content="HB"><title>Redis其他特性和功能 | HB's Blog</title><link rel="shortcut icon" href="/MyBlog.ico"><link rel="stylesheet" href="/css/index.css?version=1.6.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.6.1"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><script>var GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"We didn't find any results for the search: ${query}"}},
+  copy: {
+    success: 'Copy successfully',
+    error: 'Copy error',
+    noSupport: 'The browser does not support'
+  }
+} </script></head><body><canvas class="fireworks"></canvas><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar"><div class="toggle-sidebar-info text-center"><span data-toggle="Toggle article">Toggle site</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">Catalog</div><div class="sidebar-toc__progress"><span class="progress-notice">You've read</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#慢查询"><span class="toc-number">1.</span> <span class="toc-text"> 慢查询</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#定义"><span class="toc-number">1.1.</span> <span class="toc-text"> 定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#客户端请求生命周期"><span class="toc-number">1.2.</span> <span class="toc-text"> 客户端请求生命周期</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#慢查询配置"><span class="toc-number">1.3.</span> <span class="toc-text"> 慢查询配置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#慢查询命令"><span class="toc-number">1.4.</span> <span class="toc-text"> 慢查询命令</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#注意事项"><span class="toc-number">1.5.</span> <span class="toc-text"> 注意事项</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#pipeline"><span class="toc-number">2.</span> <span class="toc-text"> pipeline</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#定义-2"><span class="toc-number">2.1.</span> <span class="toc-text"> 定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#使用"><span class="toc-number">2.2.</span> <span class="toc-text"> 使用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#注意事项-2"><span class="toc-number">2.3.</span> <span class="toc-text"> 注意事项</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#发布订阅"><span class="toc-number">3.</span> <span class="toc-text"> 发布订阅</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#发布订阅模型"><span class="toc-number">3.1.</span> <span class="toc-text"> 发布订阅模型</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#api"><span class="toc-number">3.2.</span> <span class="toc-text"> API</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#与消息队列的区别"><span class="toc-number">3.3.</span> <span class="toc-text"> 与消息队列的区别</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#位图"><span class="toc-number">4.</span> <span class="toc-text"> 位图</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#定义-3"><span class="toc-number">4.1.</span> <span class="toc-text"> 定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#特征"><span class="toc-number">4.2.</span> <span class="toc-text"> 特征</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#api-2"><span class="toc-number">4.3.</span> <span class="toc-text"> API</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#注意事项-3"><span class="toc-number">4.4.</span> <span class="toc-text"> 注意事项</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#hyperloglog"><span class="toc-number">5.</span> <span class="toc-text"> HyperLogLog</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#定义-4"><span class="toc-number">5.1.</span> <span class="toc-text"> 定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#api-3"><span class="toc-number">5.2.</span> <span class="toc-text"> API</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#注意事项-4"><span class="toc-number">5.3.</span> <span class="toc-text"> 注意事项</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#geo-redis-32支持"><span class="toc-number">6.</span> <span class="toc-text"> GEO - redis 3.2+支持</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#定义-5"><span class="toc-number">6.1.</span> <span class="toc-text"> 定义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#api-4"><span class="toc-number">6.2.</span> <span class="toc-text"> API</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考资料"><span class="toc-number">7.</span> <span class="toc-text"> 参考资料</span></a></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://s2.ax1x.com/2019/07/30/eJEjKO.jpg"></div><div class="author-info__name text-center">HB</div><div class="author-info__description text-center">记录自己填坑之路（又称踩坑大全:D）和喜欢的一些东西~</div><div class="follow-button"><a href="https://github.com/hbheyho" rel="external nofollow noopener noreferrer" target="_blank">Follow Me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/archives"><span class="pull-left">Articles</span><span class="pull-right">21</span></a><a class="author-info-articles__tags article-meta" href="/tags"><span class="pull-left">Tags</span><span class="pull-right">10</span></a><a class="author-info-articles__categories article-meta" href="/categories"><span class="pull-left">Categories</span><span class="pull-right">8</span></a></div></div></div><div id="content-outer"><div id="top-container" style="background-image: url(https://s2.ax1x.com/2019/07/30/eJVZqg.png)"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/">HB's Blog</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right menus">   <a class="site-page" href="/">Home</a><a class="site-page" href="/archives">Archives</a><a class="site-page" href="/tags">Tags</a><a class="site-page" href="/categories">Categories</a><a class="site-page" href="/gallery">Gallery</a></span><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> Search</span></a></span></div><div id="post-info"><div id="post-title">Redis其他特性和功能</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2020-04-10</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/Redis/">Redis</a><div class="post-meta-wordcount"><span>Word count: </span><span class="word-count">1.5k</span><span class="post-meta__separator">|</span><span>Reading time: 5 min</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><h2 id="慢查询"><a class="markdownIt-Anchor" href="#慢查询"></a> 慢查询</h2>
+<h3 id="定义"><a class="markdownIt-Anchor" href="#定义"></a> 定义</h3>
+<p>慢查询日志帮助开发和运维人员定位系统存在的慢操作。慢查询日志就是系统在命令执行前后计算每条命令的执行时间，当超过预设阀值，就将这条命令的相关信息（慢查询ID，发生时间戳，耗时，命令的详细信息）记录下来，可将其持久化到磁盘中供开发人员分析。</p>
+<h3 id="客户端请求生命周期"><a class="markdownIt-Anchor" href="#客户端请求生命周期"></a> 客户端请求生命周期</h3>
+<img src="/Redis其他特性和功能/请求生命周期.png" title="请求生命周期">
+<p>慢查询是一个先进先出的队列，该队列固定长度，保存在内存中。若一条命令在第三阶段的执行过程中被判断为慢查询，则会进行该队列。</p>
+<h3 id="慢查询配置"><a class="markdownIt-Anchor" href="#慢查询配置"></a> 慢查询配置</h3>
+<img src="/Redis其他特性和功能/慢查询.png" title="慢查询">
+<ol>
+<li>slowlog-log-slower-than: 命令是否是慢查询的界定条件（阈值），单位微秒，例如超过10毫秒就认为该命令是慢查询，= 0 是代表记录所有命令，&lt; 0 不记录任何命令，默认：10000。</li>
+<li>slowlog-max-len: 慢查询列表的固定长度，默认：128</li>
+<li>slowlog list:  指明有哪些慢查询</li>
+<li>参数配置：
+<ul>
+<li>修改配置文件</li>
+<li>动态配置：config set slowlog-max-len 1000</li>
+</ul>
+</li>
+</ol>
+<h3 id="慢查询命令"><a class="markdownIt-Anchor" href="#慢查询命令"></a> 慢查询命令</h3>
+<ol>
+<li><em>slowlog get [n]</em> # 获取慢查询队列， n 指明获取几个慢查询记录</li>
+<li><em>slowlog len</em>  # 获取慢查询队列长度</li>
+<li><em>slowlog reset</em> # 清空慢查询队列</li>
+</ol>
+<h3 id="注意事项"><a class="markdownIt-Anchor" href="#注意事项"></a> 注意事项</h3>
+<ol>
+<li>slowlog-max-len：线上环境建议调大慢查询日志的列表，记录慢查询日志时Redis会对长命令做截断操作，并不会占用大量内存。增大慢查询列表可以减缓慢查询被剔除出列表的可能性。例如线上可以设置为1000以上。</li>
+<li>slowlog-log-lower-than：需要根据redis的并发量调整该值。由于redis采用单线程，对于高流量的场景，如果执行命令的时间在1毫秒以上，那么redis最多可支撑OPS（每秒操作次数）不到1000，因此高OPS场景的redis建议设置为1毫秒。</li>
+<li>慢查询日志是一个先进先出队列，慢查询较多的情况下，可能会丢失部分慢查询命令，可以定期执行slow get命令将慢查询日志持久化到其他存储中，然后制作可视化界面查询。</li>
+</ol>
+<h2 id="pipeline"><a class="markdownIt-Anchor" href="#pipeline"></a> pipeline</h2>
+<h3 id="定义-2"><a class="markdownIt-Anchor" href="#定义-2"></a> 定义</h3>
+<p>利用pipeline可以一次从发送多条命令（打包），在服务端执行之后，在把结果一次性返回，节省了命令/结果在网络中的传输时间。若没有使用pipeline，n次命令的操作，要额外花费n-1网络时间，因为redis的命令执行都是微秒级别，所以网络时间通常是瓶颈所在。</p>
+<img src="/Redis其他特性和功能/pipeline.png" title="pipeline">
+<img src="/Redis其他特性和功能/pipeline2.png" title="pipeline2">
+<h3 id="使用"><a class="markdownIt-Anchor" href="#使用"></a> 使用</h3>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Pipeline pipeline = jedis.pipelined();</span><br><span class="line">pipeline.set(&quot;product&quot;,&quot;computer&quot;);</span><br><span class="line">pipeline.set(&quot;producttwo&quot;,&quot;microwave&quot;);</span><br><span class="line">pipeline.syncAndReturnAll();</span><br></pre></td></tr></table></figure>
+<h3 id="注意事项-2"><a class="markdownIt-Anchor" href="#注意事项-2"></a> 注意事项</h3>
+<ol>
+<li>注意每次pipeline携带数据量</li>
+<li>pipeline每次只能作用在一个Redis节点上</li>
+<li>M操作（mset）是原子操作，pipeline命令非原子操作。</li>
+</ol>
+<h2 id="发布订阅"><a class="markdownIt-Anchor" href="#发布订阅"></a> 发布订阅</h2>
+<h3 id="发布订阅模型"><a class="markdownIt-Anchor" href="#发布订阅模型"></a> 发布订阅模型</h3>
+<img src="/Redis其他特性和功能/发布订阅.png" title="发布订阅">
+<h3 id="api"><a class="markdownIt-Anchor" href="#api"></a> API</h3>
+<ol>
+<li><em>publish channel message</em> # 发布者向对应频道发布消息, 返回订阅者数量<br>
+<em>e.g., publish sohu:tv “hello!”</em></li>
+<li><em>subscribe [channel]</em>  # 订阅一个或多个频道</li>
+<li><em>unsubscribe [channel]</em>  # 取消订阅一个或多个频道</li>
+<li><em>psubscribe [pattern…]</em>  # 订阅一个或多个符合给定模式的频道<br>
+e.g., psubscribe it*   # 将会订阅以it开头的频道</li>
+<li><em>punsubscribe [pattern…]</em>  # 取消订阅一个或多个符合给定模式的频道</li>
+<li><em>pubsub channels</em>  # 列出至少有一个订阅者的频道</li>
+<li><em>pubsub numsub [channels…]</em>  # 列出给定频道的订阅者数量</li>
+</ol>
+<h3 id="与消息队列的区别"><a class="markdownIt-Anchor" href="#与消息队列的区别"></a> 与消息队列的区别</h3>
+<p>发布订阅时，所以订阅者都可以收到发布者的信息，而消息队列是消息订阅者从消息队列中取消息，不保证每个消息订阅者都可以得到消息。</p>
+<h2 id="位图"><a class="markdownIt-Anchor" href="#位图"></a> 位图</h2>
+<h3 id="定义-3"><a class="markdownIt-Anchor" href="#定义-3"></a> 定义</h3>
+<p>位图（也称为位数组，位向量等）是紧凑存储位的数组数据结构。redis提供了对位的操作。</p>
+<img src="/Redis其他特性和功能/位图.png" title="位图">
+<h3 id="特征"><a class="markdownIt-Anchor" href="#特征"></a> 特征</h3>
+<p>位数组是自动扩展的，如果超出现有内容范围，它会自动将位数组进行零扩充。</p>
+<img src="/Redis其他特性和功能/位图特征.png" title="位图特征">
+<h3 id="api-2"><a class="markdownIt-Anchor" href="#api-2"></a> API</h3>
+<ol>
+<li><em>setbit key offset value</em> # 给位图指定偏移量设置值</li>
+<li><em>getbit key offset</em> #  得到指定偏移量的值</li>
+<li><em>bitcount  key [start end]</em> #  获取位图指定范围(start - end, 单位为字节， 不指定则代表获取全部)位值位1的个数</li>
+<li><em>bitop  op destkey key[key…]</em>  #  对多个位图进行 and (交集)，or(并集)，not(非)，xor(异或)操作，并把结果保存在 destkey 中</li>
+<li><em>bitpos  key targetBit [start] [end]</em>   #计算位图指定范围(start-end, 单位为字节, 不指定则代表获取全部)第一个值等于 targetBit 的偏移量</li>
+</ol>
+<h3 id="注意事项-3"><a class="markdownIt-Anchor" href="#注意事项-3"></a> 注意事项</h3>
+<ol>
+<li>Type = String, 最大512MB</li>
+<li>注意setbit时的偏移量，可能损耗大</li>
+<li>活跃用户统计/用户的签到等等应用都有奇效</li>
+</ol>
+<h2 id="hyperloglog"><a class="markdownIt-Anchor" href="#hyperloglog"></a> HyperLogLog</h2>
+<h3 id="定义-4"><a class="markdownIt-Anchor" href="#定义-4"></a> 定义</h3>
+<p>基于HyperLogLog算法，极小空间完成独立数量（基数）统计。本质还是字符串。<br>
+基数统计：一个集合（注意：这里集合的含义是 Object 的聚合，可以包含重复元素）中不重复元素的个数。例如集合 {1,2,3,1,2}，它有5个元素，但它的基数/Distinct 数为3。</p>
+<h3 id="api-3"><a class="markdownIt-Anchor" href="#api-3"></a> API</h3>
+<ol>
+<li><em>pfadd key element [element…</em> # 向hyperloglog添加元素</li>
+<li><em>pfcount key [key…</em> # 计算hyperloglog的独立总数</li>
+<li><em>pfmerge destkey  sourcekey[sourcekey…</em> # 合并多个hyperloglog</li>
+</ol>
+<h3 id="注意事项-4"><a class="markdownIt-Anchor" href="#注意事项-4"></a> 注意事项</h3>
+<ol>
+<li>存在错误率 - 0.81%</li>
+<li>不能取出单条数据</li>
+<li>鉴于 HyperLogLog 不保存数据内容的特性，所以，它只适用于一些特定的场景。例如计算日活、月活数据等等</li>
+</ol>
+<h2 id="geo-redis-32支持"><a class="markdownIt-Anchor" href="#geo-redis-32支持"></a> GEO - redis 3.2+支持</h2>
+<h3 id="定义-5"><a class="markdownIt-Anchor" href="#定义-5"></a> 定义</h3>
+<p>GEO: 地理信息定位，存储经纬度，计算两地距离，范围计算等。redis的geo实现采用数据结构为zset</p>
+<h3 id="api-4"><a class="markdownIt-Anchor" href="#api-4"></a> API</h3>
+<ol>
+<li>geoadd key longitude latitude member [longitude latitude member… # 增加地理位置信息<br>
+e.g., geoadd city:location 116.28 39.55 bejing</li>
+<li>geopos key member [member… # 获取地理位置信息</li>
+<li>geolist key member1 member2 [unit] # 获取两个地理位置的距离 unit: m, km, mi, ft</li>
+<li>georadius<img src="/Redis其他特性和功能/GEO.png" title="GEO"></li>
+<li>zrem key member # edis的geo实现采用数据结构为 zset，遂可以使用zset API进行删除</li>
+</ol>
+<h2 id="参考资料"><a class="markdownIt-Anchor" href="#参考资料"></a> 参考资料</h2>
+<p>[1] <a href="https://coding.imooc.com/class/151.html" rel="external nofollow noopener noreferrer" target="_blank">https://coding.imooc.com/class/151.html</a></p>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">Author: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">HB</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">Link: </span><span class="post-copyright-info"><a href="http://www.huangbin.fun/Redis其他特性和功能.html">http://www.huangbin.fun/Redis其他特性和功能.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">Copyright Notice: </span><span class="post-copyright-info">All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow noopener noreferrer" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Redis/">Redis</a></div><nav id="pagination"><div class="prev-post pull-left"><a href="/Redis持久化.html"><i class="fa fa-chevron-left">  </i><span>Redis持久化</span></a></div><div class="next-post pull-right"><a href="/Redis数据结构和相应操作.html"><span>Redis数据结构和相应操作</span><i class="fa fa-chevron-right"></i></a></div></nav><div id="vcomment"></div><script src="https://cdn1.lncld.net/static/js/3.0.4/av-min.js"></script><script src="https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js"></script><script>var notify = 'true' == true ? true : false;
+var verify = 'true' == true ? true : false;
+var GUEST_INFO = ['nick','mail','link'];
+var guest_info = 'nick,mail,link'.split(',').filter(function(item){
+  return GUEST_INFO.indexOf(item) > -1
+});
+guest_info = guest_info.length == 0 ? GUEST_INFO :guest_info;
+window.valine = new Valine({
+  el:'#vcomment',
+  notify:notify,
+  verify:verify,
+  appId:'OsrlEL0GyLWhwM5Xotg4xfqf-gzGzoHsz',
+  appKey:'SoCJQuXAiFLxpAUwilquruNA',
+  placeholder:'来呀~快来评论呀~',
+  avatar:'monsterid',
+  guest_info:guest_info,
+  pageSize:'10',
+  lang: 'en'
+})</script></div></div><footer class="footer-bg" style="background-image: url(https://s2.ax1x.com/2019/07/30/eJVZqg.png)"><div class="layout" id="footer"><div class="copyright">&copy;2019 - 2020 By HB</div><div class="framework-info"><span>Driven - </span><a href="http://hexo.io" rel="external nofollow noopener noreferrer" target="_blank"><span>Hexo</span></a><span class="footer-separator">|</span><span>Theme - </span><a href="https://github.com/Molunerfinn/hexo-theme-melody" rel="external nofollow noopener noreferrer" target="_blank"><span>Melody</span></a></div><div class="footer_custom_text">Hi, welcome to my <a href="https://hbheyho.github.io/" rel="external nofollow noopener noreferrer" target="_blank">blog</a>!</div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><span id="busuanzi_container_page_pv"><i class="fa fa-file"></i><span id="busuanzi_value_page_pv"></span><span></span></span></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/js/utils.js?version=1.6.1"></script><script src="/js/fancybox.js?version=1.6.1"></script><script src="/js/sidebar.js?version=1.6.1"></script><script src="/js/copy.js?version=1.6.1"></script><script src="/js/fireworks.js?version=1.6.1"></script><script src="/js/transition.js?version=1.6.1"></script><script src="/js/scroll.js?version=1.6.1"></script><script src="/js/head.js?version=1.6.1"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css"><script src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css"><script src="/js/katex.js"></script><script src="/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">Local search</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="Search for Posts"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;" rel="external nofollow noopener noreferrer" target="_blank">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>

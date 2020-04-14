@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="en"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="Redis持久化"><meta name="keywords" content="Redis"><meta name="author" content="HB"><meta name="copyright" content="HB"><title>Redis持久化 | HB's Blog</title><link rel="shortcut icon" href="/MyBlog.ico"><link rel="stylesheet" href="/css/index.css?version=1.6.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.6.1"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><script>var GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"We didn't find any results for the search: ${query}"}},
+  copy: {
+    success: 'Copy successfully',
+    error: 'Copy error',
+    noSupport: 'The browser does not support'
+  }
+} </script></head><body><canvas class="fireworks"></canvas><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar"><div class="toggle-sidebar-info text-center"><span data-toggle="Toggle article">Toggle site</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">Catalog</div><div class="sidebar-toc__progress"><span class="progress-notice">You've read</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#定义"><span class="toc-number">1.</span> <span class="toc-text"> 定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#rdb持久化"><span class="toc-number">2.</span> <span class="toc-text"> RDB持久化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#aof持久化"><span class="toc-number">3.</span> <span class="toc-text"> AOF持久化</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#持久化策略对比"><span class="toc-number">4.</span> <span class="toc-text"> 持久化策略对比</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考资料"><span class="toc-number">5.</span> <span class="toc-text"> 参考资料</span></a></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://s2.ax1x.com/2019/07/30/eJEjKO.jpg"></div><div class="author-info__name text-center">HB</div><div class="author-info__description text-center">记录自己填坑之路（又称踩坑大全:D）和喜欢的一些东西~</div><div class="follow-button"><a href="https://github.com/hbheyho" rel="external nofollow noopener noreferrer" target="_blank">Follow Me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/archives"><span class="pull-left">Articles</span><span class="pull-right">21</span></a><a class="author-info-articles__tags article-meta" href="/tags"><span class="pull-left">Tags</span><span class="pull-right">10</span></a><a class="author-info-articles__categories article-meta" href="/categories"><span class="pull-left">Categories</span><span class="pull-right">8</span></a></div></div></div><div id="content-outer"><div id="top-container" style="background-image: url(https://s2.ax1x.com/2019/07/30/eJVZqg.png)"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/">HB's Blog</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right menus">   <a class="site-page" href="/">Home</a><a class="site-page" href="/archives">Archives</a><a class="site-page" href="/tags">Tags</a><a class="site-page" href="/categories">Categories</a><a class="site-page" href="/gallery">Gallery</a></span><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> Search</span></a></span></div><div id="post-info"><div id="post-title">Redis持久化</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2020-04-10</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/Redis/">Redis</a><div class="post-meta-wordcount"><span>Word count: </span><span class="word-count">1k</span><span class="post-meta__separator">|</span><span>Reading time: 3 min</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><h2 id="定义"><a class="markdownIt-Anchor" href="#定义"></a> 定义</h2>
+<p>Redis所有数据保存在内存中，把内存中的数据保存在磁盘中，称之为持久化</p>
+<h2 id="rdb持久化"><a class="markdownIt-Anchor" href="#rdb持久化"></a> RDB持久化</h2>
+<ol>
+<li>
+<p>RDB 是 Redis 默认的持久化方案。在指定的时间间隔内，执行了指定次数的写操作，则会将内存中的数据写入到磁盘中，即在指定目录下生成一个dump.rdb文件。Redis 重启会通过加载dump.rdb文件恢复数据。RDB生成的文件也可作为复制媒介使用。</p>
+</li>
+<li>
+<p>触发方式</p>
+<ul>
+<li><em>save</em>  # 客户端发出命令后，redis会生成相应的dump.rdb文件（若存在老的RDB文件，则新替老）。该命令为同步命令，进行Save 命令时，其他命令不能执行，容易发生阻塞， O(n)</li>
+<li><em>bgsave</em> #与Save 不同的是，该命令为异步命令，会开一个子进程进行处理， O(n)</li>
+</ul>
+ <img src="/Redis持久化/RDB持久化.png" title="RDB持久化">
+ <img src="/Redis持久化/RDB持久化2.png" title="RDB持久化2"> 
+<ul>
+<li>利用配置文件进行触发 - 采用 bgsave方式</li>
+</ul>
+ <img src="/Redis持久化/RDB持久化3.png" title="RDB持久化3"> 
+<p>  <strong>重要配置项：</strong><br>
+   dbfilename dump.rdb  # 指定本地数据库名<br>
+   dir ./   # 指定本地数据库存放目录<br>
+   rdbcompression yes #默认开启数据压缩，redis采用LZF压缩方式，但占用了一点CPU的时间。<br>
+   stop-writes-on-bgsave-error yes #出现错误是否停止写入<br>
+   rdbchecksum yes #是否对RDB文件进行校验</p>
+<ul>
+<li>全量复制 - 主从复制时会自动生成RDB文件</li>
+<li>debug reload - 也会生成RDB文件</li>
+<li>shutdown - Redis也会RDB文件</li>
+</ul>
+</li>
+<li>
+<p>优缺点</p>
+<ul>
+<li>适合大规模的数据恢复。</li>
+<li>如果业务对数据完整性和一致性要求不高，RDB是很好的选择。</li>
+<li>数据的完整性和一致性不高，因为RDB可能在最后一次备份时宕机了 - 不可控，丢失数据。</li>
+<li>备份时占用内存，因为Redis 在备份时会独立创建一个子进程，将数据写入到一个临时文件（此时内存中的数据是原来的两倍哦），最后再将临时文件替换之前的备份文件 - 耗时，耗性能</li>
+</ul>
+</li>
+</ol>
+<h2 id="aof持久化"><a class="markdownIt-Anchor" href="#aof持久化"></a> AOF持久化</h2>
+<ol>
+<li>
+<p>Redis 默认不开启。它的出现是为了弥补RDB的不足（数据的不一致性），所以它采用日志的形式来记录每个写操作，并追加到文件中。redis 重启的会根据日志文件的内容将写指令从前到后执行一次以完成数据的恢复工作。</p>
+</li>
+<li>
+<p>配置文件</p>
+<ul>
+<li>appendonly yes  # 开启AOF</li>
+<li>appendfilename “appendonly-6379.aof” # 指定本地数据库名</li>
+<li>appendfsysnc always/everysec/no # 指定更新日志条件<br>
+  - always：同步持久化，每次发生数据变化会立刻写入到磁盘中。性能较差但是数据完整性比较好（慢，安全）<br>
+  - everysec：出厂默认推荐，每秒异步记录一次（默认值）<br>
+  - no ：不同步，由OS决定何时把命令写入到文件中</li>
+</ul>
+ <img src="/Redis持久化/AOF持久化.png" title="AOF持久化"> 
+ <img src="/Redis持久化/AOF持久化2.png" title="AOF持久化2"> 
+ <img src="/Redis持久化/AOF持久化3.png" title="AOF持久化3"> 
+<ul>
+<li>为了缩小AOF文件的大小，提供了AOP重写,目的减少磁盘占用量（减少冗余）,加速恢复速度</li>
+</ul>
+ <img src="/Redis持久化/AOF持久化4.png" title="AOF持久化4"> 
+<p>  <strong>重写原理</strong><br>
+  Redis 会fork出一条新进程，读取内存中的数据，并重新写到一个临时文件中，并没有读取旧文件，最后替换旧的aof文件。<br>
+  <strong>重写方式</strong><br>
+  a. bgrewriteaof  #异步，会开启一个子进程来进行处理<br>
+  b. 配置文件 - 执行bgrewriteaof<br>
+    auto-aof-rewrite-min-size #AOF文件重写需要的尺寸<br>
+    auto-aof-rewrite-percentage #AOF文件增加率<br>
+    当AOF文件大小是上次rewrite后大小的一倍（增加率）且文件大于64M（尺寸）时触发</p>
+<ul>
+<li>no-appendfsync-on-rewrite yes # 在重写时是否可以进行AOF持久化操作</li>
+<li>aof-load-truncated yes # 在AOF文件出现错误时，是否忽略错误，尽量加载更多的数据</li>
+<li>在实际开发中，可能因为某些原因导致appendonly.aof 文件格式异常，从而导致数据还原失败，可以通过命令redis-check-aof --fix appendonly.aof 进行修复</li>
+</ul>
+</li>
+<li>
+<p>优缺点</p>
+<ul>
+<li>更高的数据完整性和一致性</li>
+<li>随着时间的增加，AOF文件会越来越大，数据恢复速度会越来越慢，可以通过重写解决</li>
+</ul>
+</li>
+</ol>
+<h2 id="持久化策略对比"><a class="markdownIt-Anchor" href="#持久化策略对比"></a> 持久化策略对比</h2>
+<img src="/Redis持久化/持久化对比.png" title="持久化对比"> 
+<h2 id="参考资料"><a class="markdownIt-Anchor" href="#参考资料"></a> 参考资料</h2>
+<p>[1] <a href="https://www.cnblogs.com/itdragon/p/7906481.html" rel="external nofollow noopener noreferrer" target="_blank">https://www.cnblogs.com/itdragon/p/7906481.html</a><br>
+[2] <a href="https://coding.imooc.com/class/151.html" rel="external nofollow noopener noreferrer" target="_blank">https://coding.imooc.com/class/151.html</a></p>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">Author: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">HB</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">Link: </span><span class="post-copyright-info"><a href="http://www.huangbin.fun/Redis持久化.html">http://www.huangbin.fun/Redis持久化.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">Copyright Notice: </span><span class="post-copyright-info">All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow noopener noreferrer" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Redis/">Redis</a></div><nav id="pagination"><div class="prev-post pull-left"><a href="/Redis持久化常见问题.html"><i class="fa fa-chevron-left">  </i><span>Redis持久化常见问题</span></a></div><div class="next-post pull-right"><a href="/Redis其他特性和功能.html"><span>Redis其他特性和功能</span><i class="fa fa-chevron-right"></i></a></div></nav><div id="vcomment"></div><script src="https://cdn1.lncld.net/static/js/3.0.4/av-min.js"></script><script src="https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js"></script><script>var notify = 'true' == true ? true : false;
+var verify = 'true' == true ? true : false;
+var GUEST_INFO = ['nick','mail','link'];
+var guest_info = 'nick,mail,link'.split(',').filter(function(item){
+  return GUEST_INFO.indexOf(item) > -1
+});
+guest_info = guest_info.length == 0 ? GUEST_INFO :guest_info;
+window.valine = new Valine({
+  el:'#vcomment',
+  notify:notify,
+  verify:verify,
+  appId:'OsrlEL0GyLWhwM5Xotg4xfqf-gzGzoHsz',
+  appKey:'SoCJQuXAiFLxpAUwilquruNA',
+  placeholder:'来呀~快来评论呀~',
+  avatar:'monsterid',
+  guest_info:guest_info,
+  pageSize:'10',
+  lang: 'en'
+})</script></div></div><footer class="footer-bg" style="background-image: url(https://s2.ax1x.com/2019/07/30/eJVZqg.png)"><div class="layout" id="footer"><div class="copyright">&copy;2019 - 2020 By HB</div><div class="framework-info"><span>Driven - </span><a href="http://hexo.io" rel="external nofollow noopener noreferrer" target="_blank"><span>Hexo</span></a><span class="footer-separator">|</span><span>Theme - </span><a href="https://github.com/Molunerfinn/hexo-theme-melody" rel="external nofollow noopener noreferrer" target="_blank"><span>Melody</span></a></div><div class="footer_custom_text">Hi, welcome to my <a href="https://hbheyho.github.io/" rel="external nofollow noopener noreferrer" target="_blank">blog</a>!</div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><span id="busuanzi_container_page_pv"><i class="fa fa-file"></i><span id="busuanzi_value_page_pv"></span><span></span></span></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/js/utils.js?version=1.6.1"></script><script src="/js/fancybox.js?version=1.6.1"></script><script src="/js/sidebar.js?version=1.6.1"></script><script src="/js/copy.js?version=1.6.1"></script><script src="/js/fireworks.js?version=1.6.1"></script><script src="/js/transition.js?version=1.6.1"></script><script src="/js/scroll.js?version=1.6.1"></script><script src="/js/head.js?version=1.6.1"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css"><script src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css"><script src="/js/katex.js"></script><script src="/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">Local search</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="Search for Posts"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;" rel="external nofollow noopener noreferrer" target="_blank">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>

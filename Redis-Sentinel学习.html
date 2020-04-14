@@ -1,0 +1,128 @@
+<!DOCTYPE html><html lang="en"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="Redis Sentinel学习"><meta name="keywords" content="Redis"><meta name="author" content="HB"><meta name="copyright" content="HB"><title>Redis Sentinel学习 | HB's Blog</title><link rel="shortcut icon" href="/MyBlog.ico"><link rel="stylesheet" href="/css/index.css?version=1.6.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.6.1"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><script>var GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"We didn't find any results for the search: ${query}"}},
+  copy: {
+    success: 'Copy successfully',
+    error: 'Copy error',
+    noSupport: 'The browser does not support'
+  }
+} </script></head><body><canvas class="fireworks"></canvas><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar"><div class="toggle-sidebar-info text-center"><span data-toggle="Toggle article">Toggle site</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">Catalog</div><div class="sidebar-toc__progress"><span class="progress-notice">You've read</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#定义"><span class="toc-number">1.</span> <span class="toc-text"> 定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#功能和架构"><span class="toc-number">2.</span> <span class="toc-text"> 功能和架构</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#故障转移过程"><span class="toc-number">3.</span> <span class="toc-text"> 故障转移过程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#sentinel配置和启动"><span class="toc-number">4.</span> <span class="toc-text"> Sentinel配置和启动</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#扩展"><span class="toc-number">5.</span> <span class="toc-text"> 扩展</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#运维问题"><span class="toc-number">6.</span> <span class="toc-text"> 运维问题</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#参考资料"><span class="toc-number">7.</span> <span class="toc-text"> 参考资料</span></a></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://s2.ax1x.com/2019/07/30/eJEjKO.jpg"></div><div class="author-info__name text-center">HB</div><div class="author-info__description text-center">记录自己填坑之路（又称踩坑大全:D）和喜欢的一些东西~</div><div class="follow-button"><a href="https://github.com/hbheyho" rel="external nofollow noopener noreferrer" target="_blank">Follow Me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/archives"><span class="pull-left">Articles</span><span class="pull-right">21</span></a><a class="author-info-articles__tags article-meta" href="/tags"><span class="pull-left">Tags</span><span class="pull-right">10</span></a><a class="author-info-articles__categories article-meta" href="/categories"><span class="pull-left">Categories</span><span class="pull-right">8</span></a></div></div></div><div id="content-outer"><div id="top-container" style="background-image: url(https://s2.ax1x.com/2019/07/30/eJVZqg.png)"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/">HB's Blog</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right menus">   <a class="site-page" href="/">Home</a><a class="site-page" href="/archives">Archives</a><a class="site-page" href="/tags">Tags</a><a class="site-page" href="/categories">Categories</a><a class="site-page" href="/gallery">Gallery</a></span><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> Search</span></a></span></div><div id="post-info"><div id="post-title">Redis Sentinel学习</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2020-04-10</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/Redis/">Redis</a><div class="post-meta-wordcount"><span>Word count: </span><span class="word-count">1.9k</span><span class="post-meta__separator">|</span><span>Reading time: 6 min</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><h2 id="定义"><a class="markdownIt-Anchor" href="#定义"></a> 定义</h2>
+<p>Redis sentinel称为哨兵模式，是Redis 高可用的实现方法，具有故障发现，故障自动转移，配置中心和客户端通知，2.8版本后sentinel生产可用。sentinel作为一个独立的进程，监控多个运行的Redis 数据库。<br>
+主要解决主从复制发生故障时，进行手动故障转移的复杂性问题，当主节点宕机后，需要手动选择一个从节点作为新的主数节点，其他作为从节点，而利用sentinel能自动完成故障转移过程。<br>
+sentinel也支持集群，因为使用单个sentinel进程了监控Redis是不可靠的，容易出现单点问题</p>
+<ul>
+<li>即使有一些sentinel进程宕掉了，依然可以进行Redis 集群的主从切换</li>
+<li>如果只有一个sentinel进程，如果这个进程运行出错，或者是网络堵塞，那么将无法实现Redis 集群的主从切换</li>
+<li>如果有多个sentinel，redis的客户端可以随意地连接任意一个sentinel来获得关于Redis 集群中的信息</li>
+</ul>
+<h2 id="功能和架构"><a class="markdownIt-Anchor" href="#功能和架构"></a> 功能和架构</h2>
+<ol>
+<li>功能
+<ul>
+<li>监控Redis的运行状况</li>
+<li>当发生故障时实现主从切换。当一个master宕机之后，从它的多个slave中投票选举中一个新的master，剩余节点作为新的master的slave</li>
+</ul>
+</li>
+<li>架构</li>
+</ol>
+<img src="/Redis-Sentinel学习/架构图.png" title="架构图">
+<p>在这个架构中，sentinel节点会监控master和slave的相关信息，主要值得关注的是client与sentinel之间的交互：</p>
+<ol>
+<li>client首先需要知道sentinel节点集合和mastername信息，通过遍历它所知道的sentinel集合，获取到一个可用的sentinel节点</li>
+<li>找到可用的sentinel节点之后，client通过 sentinel get-master-addr-by-name masterName 命令的得到master节点的地址和端口</li>
+<li>得到master相关信息之后，会进行一次role/role replication验证，master节点会返回验证信息，至此client可以对master进行写入和读取</li>
+<li>sentine也会将redis数据节点的变化通知给客户端 - 使用发布订阅模式进行通知</li>
+<li>上述过程不是通过代理模式实现的，即上述client和master建立关系的过程通常只需执行一次即可</li>
+</ol>
+<h2 id="故障转移过程"><a class="markdownIt-Anchor" href="#故障转移过程"></a> 故障转移过程</h2>
+<ol>
+<li>当一个sentinel检测master宕机并不会马上进行故障转移（主观下线），只有当后面的sentinel也都认为master不可用并达到一定数量时（客观下线），选举出一个领导者sentinel来进行故障转移操作</li>
+<li>选出一个slave作为master，执行 slave of one 让其成为master节点</li>
+<li>通知其余slave做为新的master的slave</li>
+<li>等待老的master复活，若复活成功，成为新的master的slave</li>
+<li>通知客户端发生了主从变化</li>
+</ol>
+<p>实现上述故障转移依靠三个定时任务：</p>
+<ol>
+<li>每10s每个sentinel对master和slave执行info操作
+<ul>
+<li>发现slave操作</li>
+<li>确认主从关系</li>
+</ul>
+</li>
+<li>每2s每个sentinel通过master节点的channel交换信息
+<ul>
+<li>发布订阅模式</li>
+<li>通过_sentinel_:hello频道交互</li>
+<li>交互对节点的&quot;看法&quot;和自身信息 - 可以知道其他sentinel的相关信息或投票来确定哪个sentinel来进行故障转移<img src="/Redis-Sentinel学习/sentinel发布订阅图.png" title="sentinel发布订阅图"></li>
+</ul>
+</li>
+<li>每1s每个sentinel对其他sentinel和redis执行ping
+<ul>
+<li>心跳检测，失败判定依据，比如可以作为客观下线的依据。</li>
+</ul>
+</li>
+</ol>
+<h2 id="sentinel配置和启动"><a class="markdownIt-Anchor" href="#sentinel配置和启动"></a> Sentinel配置和启动</h2>
+<ol>
+<li>配置文件</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># sentinel运行端口</span><br><span class="line">port 26379</span><br><span class="line"></span><br><span class="line"># 守护进程启动</span><br><span class="line">daemonize yes</span><br><span class="line"></span><br><span class="line"># sentinel工作目录</span><br><span class="line">dir &quot;/usr/local/share/redis/redis-3.0.5/backs&quot;</span><br><span class="line"></span><br><span class="line"># sentinel 日志文件</span><br><span class="line">logfile &quot;sentinel-26379.log&quot;</span><br><span class="line"></span><br><span class="line"># sentinel监控的master信息 master-name ip port quorum - 当quorm个数sentinel节点认为maste</span><br><span class="line"># r失联,则执行故障转移</span><br><span class="line">sentinel monitor mymaster 192.168.2.23 6379 2</span><br><span class="line"></span><br><span class="line"># 一定时间内,master没有应答哨兵sentinel, sentinel认为master主观下线 默认30秒(ping 30 次没有ping通)</span><br><span class="line">sentinel down-after-milliseconds mymaster 30000</span><br><span class="line"></span><br><span class="line"># 在进行主从切换时(故障转移),最多可以几个slave对新的master进行同步。若设置的值很小, 则同</span><br><span class="line">步需要花费很长时间, 值很大,则有很多slave应为同步复制而不可用, 也会降低master节点的性能</span><br><span class="line">sentinel parallel-syncs mymaster 1</span><br><span class="line"></span><br><span class="line"># 故障转移超时时间, 应用于以下情况</span><br><span class="line"># 1. 同一个sentinel对同一个master两次failover之间的间隔时间</span><br><span class="line"># 2. 当一个slave从一个错误的master那里同步数据开始计算时间,直到slave被纠正为向正确的mast</span><br><span class="line"># er那里同步数据时</span><br><span class="line"># 3.当想要取消一个正在进行的failover所需要的时间  </span><br><span class="line"># 4.当进行failover时,配置所有slaves指向新的master所需的最大时间。不过，即使过了这个时间,</span><br><span class="line"># slaves依然会被正确配置为指向master，但是就不按parallel-syncs所配置的规则进行处理</span><br><span class="line">sentinel failover-timeout mymaster 180000</span><br></pre></td></tr></table></figure>
+<p>注：可以看到sentinel.conf配置文件主要是对master节点进行监控，通过master节点使用 info replecation 进行slave的相关信息获取，会将获取的slave信息自动添加到 sentinel.conf配置文件之中，在配置文件中的标识为：Generated by CONFIG REWRITE，需要注意的是，redis在添加slave信息的同时，也会对一些配置信息进行更改，例如sentinel down-after-milliseconds，sentinel parallel-syncs，sentinel failover-timeout会被移除，添加sentinel config-epoch，sentinel leader-epoch等配置 。</p>
+<ol start="2">
+<li>启动</li>
+</ol>
+<p>  <em>redis-sentinel sentinel.conf</em>  # 启动sentinel<br>
+  <em>redis-cli -p 26379</em>  # 连接sentinel, sentinel也当成一个普通的Redis 节点来对待</p>
+<h2 id="扩展"><a class="markdownIt-Anchor" href="#扩展"></a> 扩展</h2>
+<ol>
+<li>主观下线：每个sentinel节点对Redis 节点失败的&quot;偏见&quot;，可能由于网络问题，Redis 节点不能在规定的时间内回应sentinel节点</li>
+<li>客观下线：所有sentin节点对Redis 节点失败达成&quot;共识&quot;，即sentinel节点中认为Redis 节点可以进行客观下线的个数超过quorum的个数，此时可以真正进行故障转移操作。其中达成共识通过sentinel is-master-down-by-addr命令询问其他sentinel节点的&quot;意见&quot;来完成的</li>
+<li>领导者选举
+<ul>
+<li>原因：只需要一个sentinel节点来进行故障转移</li>
+<li>如何：1. 每个做主观下线的sentinel节点通过sentinel is-master-down-by-addr 来询问其他sentinel节点的&quot;意见&quot;是否要对master节点进行客观下线的时候，通过也会要求将其设置为领导者；2. 收到命令的sentinel节点如果没有同意其他sentinel节点成为领导者的请求，那就同意，否则拒绝；3. 如果该sentinel节点发现自己的票数超过了sentinel集合半数且超过了quorum，那么它将成为领导者来进行故障处理；4. 如果有多个sentin节点成为领导者，则过一段时间再进行选举</li>
+</ul>
+</li>
+<li>如何选择合适的slave让其成为master
+<ul>
+<li>选择 slave-priority优先级最高的slave节点</li>
+<li>若全部优先级相同，则选择复制偏移量最大（与以前的master节点数据最接近）的slave节点</li>
+<li>若上述都不成立，则选择runId最小的节点，即启动最早的slave</li>
+</ul>
+</li>
+</ol>
+<h2 id="运维问题"><a class="markdownIt-Anchor" href="#运维问题"></a> 运维问题</h2>
+<ol>
+<li>主节点手动下线，进行故障转移<br>
+  <em>sentinel failover masterName</em></li>
+<li>高可用的读写分离<br>
+sentinel只会对master节点进行故障转移，对于slave节点只有进行主观下线，所以要实现高可用的读写分离，客户端要关注slave节点的变化，例如关注以下三个消息: +switch-master: 从节点晋升为主节点，+conver-to-slave:  原主节点降为从节点，+sdown: 主观下线</li>
+</ol>
+<h2 id="参考资料"><a class="markdownIt-Anchor" href="#参考资料"></a> 参考资料</h2>
+<p>[1] <a href="https://segmentfault.com/a/1190000002680804" rel="external nofollow noopener noreferrer" target="_blank">https://segmentfault.com/a/1190000002680804</a><br>
+[2] <a href="https://coding.imooc.com/class/151.html" rel="external nofollow noopener noreferrer" target="_blank">https://coding.imooc.com/class/151.html</a></p>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">Author: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">HB</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">Link: </span><span class="post-copyright-info"><a href="http://www.huangbin.fun/Redis-Sentinel学习.html">http://www.huangbin.fun/Redis-Sentinel学习.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">Copyright Notice: </span><span class="post-copyright-info">All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow noopener noreferrer" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Redis/">Redis</a></div><nav id="pagination"><div class="prev-post pull-left"><a href="/初探动态规划算法.html"><i class="fa fa-chevron-left">  </i><span>初探动态规划算法</span></a></div><div class="next-post pull-right"><a href="/Redis主从复制.html"><span>Redis主从复制</span><i class="fa fa-chevron-right"></i></a></div></nav><div id="vcomment"></div><script src="https://cdn1.lncld.net/static/js/3.0.4/av-min.js"></script><script src="https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js"></script><script>var notify = 'true' == true ? true : false;
+var verify = 'true' == true ? true : false;
+var GUEST_INFO = ['nick','mail','link'];
+var guest_info = 'nick,mail,link'.split(',').filter(function(item){
+  return GUEST_INFO.indexOf(item) > -1
+});
+guest_info = guest_info.length == 0 ? GUEST_INFO :guest_info;
+window.valine = new Valine({
+  el:'#vcomment',
+  notify:notify,
+  verify:verify,
+  appId:'OsrlEL0GyLWhwM5Xotg4xfqf-gzGzoHsz',
+  appKey:'SoCJQuXAiFLxpAUwilquruNA',
+  placeholder:'来呀~快来评论呀~',
+  avatar:'monsterid',
+  guest_info:guest_info,
+  pageSize:'10',
+  lang: 'en'
+})</script></div></div><footer class="footer-bg" style="background-image: url(https://s2.ax1x.com/2019/07/30/eJVZqg.png)"><div class="layout" id="footer"><div class="copyright">&copy;2019 - 2020 By HB</div><div class="framework-info"><span>Driven - </span><a href="http://hexo.io" rel="external nofollow noopener noreferrer" target="_blank"><span>Hexo</span></a><span class="footer-separator">|</span><span>Theme - </span><a href="https://github.com/Molunerfinn/hexo-theme-melody" rel="external nofollow noopener noreferrer" target="_blank"><span>Melody</span></a></div><div class="footer_custom_text">Hi, welcome to my <a href="https://hbheyho.github.io/" rel="external nofollow noopener noreferrer" target="_blank">blog</a>!</div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><span id="busuanzi_container_page_pv"><i class="fa fa-file"></i><span id="busuanzi_value_page_pv"></span><span></span></span></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/js/utils.js?version=1.6.1"></script><script src="/js/fancybox.js?version=1.6.1"></script><script src="/js/sidebar.js?version=1.6.1"></script><script src="/js/copy.js?version=1.6.1"></script><script src="/js/fireworks.js?version=1.6.1"></script><script src="/js/transition.js?version=1.6.1"></script><script src="/js/scroll.js?version=1.6.1"></script><script src="/js/head.js?version=1.6.1"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css"><script src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css"><script src="/js/katex.js"></script><script src="/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">Local search</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="Search for Posts"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;" rel="external nofollow noopener noreferrer" target="_blank">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>
