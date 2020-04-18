@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://www.huangbin.fun/"/>
-  <updated>2020-04-14T02:30:32.632Z</updated>
+  <updated>2020-04-18T03:20:48.129Z</updated>
   <id>http://www.huangbin.fun/</id>
   
   <author>
@@ -15,6 +15,32 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>Redis Cluster学习</title>
+    <link href="http://www.huangbin.fun/Redis-Cluster%E5%AD%A6%E4%B9%A0.html"/>
+    <id>http://www.huangbin.fun/Redis-Cluster学习.html</id>
+    <published>2020-04-18T02:57:05.000Z</published>
+    <updated>2020-04-18T03:20:48.129Z</updated>
+    
+    <content type="html"><![CDATA[<h2 id="定义"><a class="markdownIt-Anchor" href="#定义"></a> 定义</h2><p>Redis Cluster 将数据分布到不同的节点当中，以解决Redis使用过程中的容量问题（单个Redis内存无法无限扩充），并发问题（官方称当个Redis可以使用10万并发），高可用问题（部分节点不可达能继续处理命令）。 Redis 集群常常和主从复制结合使用。</p><h2 id="分布式数据库-数据分区"><a class="markdownIt-Anchor" href="#分布式数据库-数据分区"></a> 分布式数据库 - 数据分区</h2><img src="/Redis-Cluster学习/数据分区.png" title="数据分区"><h3 id="哈希分区"><a class="markdownIt-Anchor" href="#哈希分区"></a> 哈希分区</h3><p>假如有1~100条数据，按照哈希函数（例如 hash(key)%3），把数据分区到不同的三个数据库</p><ol><li>节点取余分区： hash(key) % nodes。若增加/减少节点，会进行大量数据迁移，例如当前有3个节点，增加了一个节点，按照新的hash(key) % 4进行计算时，很多数据需要进行移动。 建议进行 多倍扩容，例如当前有3个节点，可以扩容到6个节点，减少数据迁移量。节点取余也成为 不一致性哈希。比较适合缓存的场景</li><li>一致性哈希分区<br>能保证最小迁移数据，比较适合缓存的场景 - <a href="http://blog.codinglabs.org/articles/consistent-hashing.html" rel="external nofollow noopener noreferrer" target="_blank">一致性哈希分区</a></li><li>虚拟槽分区：Redis cluster采用此种分区方式，预设虚拟槽（slot），每个虚拟槽映射一个数据子集，每个节点管理一定数量的虚拟槽，redis 虚拟槽范围 0 ~ 16383。<br>使用分散函数（例如CRC16(keys) % slots ）计算出 keys 属于哪个槽，再根据节点所管理的槽的范围，从而确定数据属于哪个节点（节点中共享信息，若一个虚拟槽不属于当前节点，会告诉虚拟操去哪个节点去存储）</li></ol><img src="/Redis-Cluster学习/虚拟槽分区.png" title="虚拟槽分区"><h3 id="顺序分区"><a class="markdownIt-Anchor" href="#顺序分区"></a> 顺序分区</h3><p>假如有1 ~ 100条数据，按照顺序分区规则，可以把1 ~ 33，34 ~ 66，67 ~ 100分区到三个不同的三个数据库</p><h3 id="方式对比"><a class="markdownIt-Anchor" href="#方式对比"></a> 方式对比</h3><img src="/Redis-Cluster学习/分区比较.png" title="分区比较"><h2 id="cluster-架构"><a class="markdownIt-Anchor" href="#cluster-架构"></a> Cluster 架构</h2><img src="/Redis-Cluster学习/cluster架构.png" title="cluster架构"><ol><li>通过配置文件 cluster-enabled yes 将一个节点设置为一个集群节点</li><li>节点之间通过gossip协议进行通信，了解彼此的信息</li><li>将虚拟槽指派给上述节点</li><li>客户端通过 CRC16( key ) % 16383 并可知道对应的key应该到哪个虚拟槽的哪个节点进行处理</li></ol><h2 id="安装"><a class="markdownIt-Anchor" href="#安装"></a> 安装</h2><h3 id="配置集群节点"><a class="markdownIt-Anchor" href="#配置集群节点"></a> 配置集群节点</h3><ol><li><em>cluster-enabled yes</em>  # 配置当前节点为集群节点</li><li><em>cluster-config-file nodes-${port}.conf</em>  # 配置cluster节点自身配置文件</li><li><em>cluster-node-timeout 15000</em>  # 集群中各个节点相互通讯（ping）时，允许&quot;失联&quot;的最大毫秒数，如果超过这个时间没有得到响应，会认为该节点故障，若节点是主节点，则会进行故障转移</li><li><em>cluster-require-full-coverage yes</em>  # 若配置为 yes，则当集群中有节点不可用时，整个集群都不能提供服务，通常设置为 no</li></ol><h3 id="通过meet把每个集群节点组合成集群-集群发现"><a class="markdownIt-Anchor" href="#通过meet把每个集群节点组合成集群-集群发现"></a> 通过meet把每个集群节点组合成集群 - 集群发现</h3><ol><li><em>cluster meet ip port</em>  #当前节点去发现新的集群节点</li></ol><img src="/Redis-Cluster学习/发现集群.png" title="发现集群"><h3 id="分配槽"><a class="markdownIt-Anchor" href="#分配槽"></a> 分配槽</h3><ol><li><em>cluster addslots slot [slot…]</em>   # 为当前节点分配槽</li></ol><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># addslots.sh</span><br><span class="line"># 开始槽</span><br><span class="line">start=$1</span><br><span class="line"># 结束槽</span><br><span class="line">end=$2</span><br><span class="line"># 分配端口</span><br><span class="line">port=$3</span><br><span class="line">for slot in `seq $&#123;start&#125; $&#123;end&#125;`</span><br><span class="line">do</span><br><span class="line">   echo &quot;slot:$&#123;slot&#125;&quot;</span><br><span class="line">   redis-cli -p $&#123;port&#125; cluster addslots $&#123;slot&#125;</span><br><span class="line">done</span><br><span class="line"></span><br><span class="line"># 分配操作</span><br><span class="line">sh addslots 0 5461 7000</span><br><span class="line">sh addslots 5462 10923 7001</span><br><span class="line">sh addslots 10923 16383 7002</span><br></pre></td></tr></table></figure><p>在第二步中配置了6个集群节点，但是只为7000 ~ 7002分配槽，7000 ~ 7002作为master，其余作为slave节点</p><h3 id="配置主从关系"><a class="markdownIt-Anchor" href="#配置主从关系"></a> 配置主从关系</h3><ol><li>cluster replicate node-id  # 对 node-id节点进行复制，node-id在集群启动时会进行分配。</li><li>cluster nodes  # 查看node-id</li></ol><img src="/Redis-Cluster学习/配置主从关系.png" title="配置主从关系"><h3 id="ruby配置集群-除了上述安装方式官方提供了脚本进行快速集群配置"><a class="markdownIt-Anchor" href="#ruby配置集群-除了上述安装方式官方提供了脚本进行快速集群配置"></a> Ruby配置集群 -除了上述安装方式，官方提供了脚本进行快速集群配置</h3><h2 id="扩展"><a class="markdownIt-Anchor" href="#扩展"></a> 扩展</h2><ol><li>Gossip 协议：所有节点都保存了一份元数据，当节点发生伸缩或更新时，会将最新的元数据信息传播给所有节点。 - <a href="https://www.jianshu.com/p/8279d6fd65bb" rel="external nofollow noopener noreferrer" target="_blank">gossip协议</a><br>Redis 使用Gossip协议时采用了meet，ping，pong，fail消息进行通信</li></ol><img src="/Redis-Cluster学习/gossip协议.png" title="gossip协议"><h2 id="参考链接"><a class="markdownIt-Anchor" href="#参考链接"></a> 参考链接</h2><p>[1] <a href="https://blog.csdn.net/makyan/article/details/104798725" rel="external nofollow noopener noreferrer" target="_blank">https://blog.csdn.net/makyan/article/details/104798725</a><br>[2] <a href="https://www.jianshu.com/p/8279d6fd65bb" rel="external nofollow noopener noreferrer" target="_blank">https://www.jianshu.com/p/8279d6fd65bb</a><br>[3] <a href="https://coding.imooc.com/class/151.html" rel="external nofollow noopener noreferrer" target="_blank">https://coding.imooc.com/class/151.html</a></p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h2 id=&quot;定义&quot;&gt;&lt;a class=&quot;markdownIt-Anchor&quot; href=&quot;#定义&quot;&gt;&lt;/a&gt; 定义&lt;/h2&gt;
+&lt;p&gt;Redis Cluster 将数据分布到不同的节点当中，以解决Redis使用过程中的容量问题（单个Redis内存无法无限扩充），并发问题（官方称
+      
+    
+    </summary>
+    
+      <category term="Redis" scheme="http://www.huangbin.fun/categories/Redis/"/>
+    
+    
+      <category term="Redis" scheme="http://www.huangbin.fun/tags/Redis/"/>
+    
+  </entry>
   
   <entry>
     <title>&lt;LeetCode&gt;最长回文子串</title>
@@ -514,32 +540,6 @@
     
       <category term="JavaScript" scheme="http://www.huangbin.fun/categories/JavaScript/"/>
     
-    
-  </entry>
-  
-  <entry>
-    <title>深入理解各种推荐机制原理</title>
-    <link href="http://www.huangbin.fun/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E5%90%84%E7%A7%8D%E6%8E%A8%E8%8D%90%E6%9C%BA%E5%88%B6%E5%8E%9F%E7%90%86.html"/>
-    <id>http://www.huangbin.fun/深入理解各种推荐机制原理.html</id>
-    <published>2019-06-30T07:34:51.000Z</published>
-    <updated>2019-07-30T08:58:41.790Z</updated>
-    
-    <content type="html"><![CDATA[<h2 id="基于人口统计学的推荐"><a class="markdownIt-Anchor" href="#基于人口统计学的推荐"></a> 基于人口统计学的推荐</h2><p> 基于人口统计学的推荐机制（Demographic-based Recommendation）是一种最易于实现的推荐方法，它只是简单的根据系统用户的基本信息发现用户的相关程度，然后将相似用户喜爱的其他物品推荐给当前用户。</p><img src="/深入理解各种推荐机制原理/基于人口统计学的推荐机制.png" title="基于人口统计学的推荐机制"><h3 id="基于人口统计学的推荐机制工作原理"><a class="markdownIt-Anchor" href="#基于人口统计学的推荐机制工作原理"></a> 基于人口统计学的推荐机制工作原理</h3><p> 从图中可以很清楚的看到，首先，系统对每个用户都有一个用户 Profile 的建模，其中包括用户的基本信息，例如用户的年龄，性别等等；然后，系统会根据用户的 Profile 计算用户的相似度，可以看到用户 A 的 Profile 和用户 C 一样，那么系统会认为用户 A 和 C 是相似用户，在推荐引擎中，可以称他们是“邻居”；最后，基于“邻居”用户群的喜好推荐给当前用户一些物品，图中将用户 A 喜欢的物品 A 推荐给用户 C。</p><h3 id="好处"><a class="markdownIt-Anchor" href="#好处"></a> 好处</h3><p>  1. 因为不使用当前用户对物品的喜好历史数据，所以对于新用户来讲没有“冷启动（Cold Start）”的问题。<br>  2. 这个方法不依赖于物品本身的数据，所以这个方法在不同物品的领域都可以使用，它是领域独立的（domain-independent）。</p><h3 id="缺点"><a class="markdownIt-Anchor" href="#缺点"></a> 缺点</h3><p> 这种基于用户的基本信息对用户进行分类的方法过于粗糙，尤其是对品味要求较高的领域，比如图书，电影和音乐等领域，无法得到很好的推荐效果。可能在一些电子商务的网站中，这个方法可以给出一些简单的推荐。另外一个局限是，这个方法可能涉及到一些与信息发现问题本身无关却比较敏感的信息，比如用户的年龄等，这些用户信息不是很好获取。</p><h2 id="基于内容的推荐"><a class="markdownIt-Anchor" href="#基于内容的推荐"></a> 基于内容的推荐</h2><p> 基于内容的推荐是在推荐引擎出现之初应用最为广泛的推荐机制，它的核心思想是根据推荐物品或内容的元数据，发现物品或者内容的相关性，然后基于用户以往的喜好记录，推荐给用户相似的物品。</p><img src="/深入理解各种推荐机制原理/基于内容的推荐机制.png" title="基于内容的推荐机制"><h3 id="基于内容的推荐工作原理"><a class="markdownIt-Anchor" href="#基于内容的推荐工作原理"></a> 基于内容的推荐工作原理</h3><p> 电影推荐系统，首先我们需要对电影的元数据有一个建模，这里只简单的描述了一下电影的类型；然后通过电影的元数据发现电影间的相似度，因为类型都是“爱情，浪漫”电影 A 和 C 被认为是相似的电影（当然，只根据类型是不够的，要得到更好的推荐，我们还可以考虑电影的导演，演员等等）；最后实现推荐，对于用户 A，他喜欢看电影 A，那么系统就可以给他推荐类似的电影 C。</p><h3 id="缺点-2"><a class="markdownIt-Anchor" href="#缺点-2"></a> 缺点</h3><p> 这种基于内容的推荐机制的好处在于它能很好的建模用户的口味，能提供更加精确的推荐。但它也存在以下几个问题：<br>  1. 需要对物品进行分析和建模，推荐的质量依赖于对物品模型的完整和全面程度。在现在的应用中我们可以观察到关键词和标签（Tag）被认为是描述物品元数据的一种简单有效的方法。<br>  2. 物品相似度的分析仅仅依赖于物品本身的特征，这里没有考虑人对物品的态度。<br>  3. 因为需要基于用户以往的喜好历史做出推荐，所以对于新用户有“冷启动”的问题。</p><p> 虽然这个方法有很多不足和问题，但他还是成功的应用在一些电影，音乐，图书的社交站点，有些站点还请专业的人员对物品进行基因编码，比如潘多拉，在一份报告中说道，在潘多拉的推荐引擎中，每首歌有超过 100 个元数据特征，包括歌曲的风格，年份，演唱者等等。</p><h2 id="基于协同过滤的推荐"><a class="markdownIt-Anchor" href="#基于协同过滤的推荐"></a> 基于协同过滤的推荐</h2><p> 随着 Web2.0 的发展，Web站点更加提倡用户参与和用户贡献，因此基于协同过滤的推荐机制因运而生。它的原理很简单，就是根据用户对物品或者信息的偏好，发现物品或者内容本身的相关性，或者是发现用户的相关性，然后再基于这些关联性进行推荐。基于协同过滤的推荐可以分为三个子类：基于用户的推荐（User-based Recommendation），基于项目的推荐（Item-based Recommendation）和基于模型的推荐（Model-based Recommendation）。下面我们一个一个详细的介绍着三种协同过滤的推荐机制。</p><h3 id="基于用户的协同过滤推荐"><a class="markdownIt-Anchor" href="#基于用户的协同过滤推荐"></a> 基于用户的协同过滤推荐</h3><p> 基于用户的协同过滤推荐的基本原理是，根据所有用户对物品或者信息的偏好，发现与当前用户口味和偏好相似的“邻居”用户群，在一般的应用中是采用计算“K- 邻居”的算法；然后，基于这 K 个邻居的历史偏好信息，为当前用户进行推荐。</p><img src="/深入理解各种推荐机制原理/基于用户的协同过滤工作原理.png" title="基于用户的协同过滤工作原理"><p> 上图示意出基于用户的协同过滤推荐机制的基本原理，假设用户 A 喜欢物品 A，物品 C，用户 B 喜欢物品 B，用户 C 喜欢物品 A ，物品 C 和物品 D；从这些用户的历史喜好信息中，我们可以发现用户 A 和用户 C 的口味和偏好是比较类似的，同时用户 C 还喜欢物品 D，那么我们可以推断用户 A 可能也喜欢物品 D，因此可以将物品 D 推荐给用户 A。<br> 基于用户的协同过滤推荐机制和基于人口统计学的推荐机制都是计算用户的相似度，并基于“邻居”用户群计算推荐，但它们所不同的是如何计算用户的相似度，基于人口统计学的机制只考虑用户本身的特征，而基于用户的协同过滤机制可是在用户的历史偏好的数据上计算用户的相似度，它的基本假设是，喜欢类似物品的用户可能有相同或者相似的口味和偏好。</p><h3 id="基于项目的协同过滤推荐"><a class="markdownIt-Anchor" href="#基于项目的协同过滤推荐"></a> 基于项目的协同过滤推荐</h3><p> 基于项目的协同过滤推荐的基本原理也是类似的，只是说它使用所有用户对物品或者信息的偏好，发现物品和物品之间的相似度，然后根据用户的历史偏好信息，将类似的物品推荐给用户。</p><img src="/深入理解各种推荐机制原理/基于项目的协同过滤工作原理.png" title="基于项目的协同过滤工作原理"><p> 假设用户 A 喜欢物品 A 和物品 C，用户 B 喜欢物品 A，物品 B 和物品 C，用户 C 喜欢物品 A，从这些用户的历史喜好可以分析出物品 A 和物品 C 时比较类似的，喜欢物品 A 的人都喜欢物品 C，基于这个数据可以推断用户 C 很有可能也喜欢物品 C，所以系统会将物品 C 推荐给用户 C。<br> 与上面讲的类似，基于项目的协同过滤推荐和基于内容的推荐其实都是基于物品相似度预测推荐，只是相似度计算的方法不一样，前者是从用户历史的偏好推断，而后者是基于物品本身的属性特征信息。<br> 同时协同过滤，在基于用户和基于项目两个策略中应该如何选择呢？其实基于项目的协同过滤推荐机制是 Amazon 在基于用户的机制上改良的一种策略，因为在大部分的 Web 站点中，物品的个数是远远小于用户的数量的，而且物品的个数和相似度相对比较稳定，同时基于项目的机制比基于用户的实时性更好一些。但也不是所有的场景都是这样的情况，可以设想一下在一些新闻推荐系统中，也许物品，也就是新闻的个数可能大于用户的个数，而且新闻的更新程度也有很快，所以它的形似度依然不稳定。所以，其实可以看出，推荐策略的选择其实和具体的应用场景有很大的关系。</p><h3 id="基于模型的协同过滤推荐"><a class="markdownIt-Anchor" href="#基于模型的协同过滤推荐"></a> 基于模型的协同过滤推荐</h3><p> 基于模型的协同过滤推荐就是基于样本的用户喜好信息，训练一个推荐模型，然后根据实时的用户喜好的信息进行预测，计算推荐。<br> 基于协同过滤的推荐机制是现今应用最为广泛的推荐机制，它有以下几个显著的<strong>优点</strong>：<br>  1. 它不需要对物品或者用户进行严格的建模，而且不要求物品的描述是机器可理解的，所以这种方法也是领域无关的。<br>  2. 这种方法计算出来的推荐是开放的，可以共用他人的经验，很好的支持用户发现潜在的兴趣偏好</p><p>存在的<strong>问题</strong>：</p><p>  1. 方法的核心是基于历史数据，所以对新物品和新用户都有“冷启动”的问题。<br>  2. 推荐的效果依赖于用户历史偏好数据的多少和准确性。<br>  3. 在大部分的实现中，用户历史偏好是用稀疏矩阵进行存储的，而稀疏矩阵上的计算有些明显的问题，包括可能少部分人的错误偏好会对推荐的准确度有很大的影响等等。<br>  4. 对于一些特殊品味的用户不能给予很好的推荐。<br>  5. 由于以历史数据为基础，抓取和建模用户的偏好后，很难修改或者根据用户的使用演变，从而导致这个方法不够灵活。</p><h2 id="混合的推荐机制"><a class="markdownIt-Anchor" href="#混合的推荐机制"></a> 混合的推荐机制</h2><p> 在现行的 Web 站点上的推荐往往都不是单纯只采用了某一种推荐的机制和策略，他们往往是将多个方法混合在一起，从而达到更好的推荐效果。关于如何组合各个推荐机制，这里讲几种比较流行的组合方法。</p><p>  <strong>（1）加权的混合（Weighted Hybridization）</strong>: 用线性公式（linear formula）将几种不同的推荐按照一定权重组合起来，具体权重的值需要在测试数据集上反复实验，从而达到最 好的推荐效果。<br>  <strong>（2）切换的混合（Switching Hybridization）</strong>：前面也讲到，其实对于不同的情况（数据量，系统运行状况，用户和物品的数目等），推荐策略可能有很大的不同，那么切换的混合方式，就是允许在不同的情况下，选择最为合适的推荐机制计算推荐。<br>  <strong>（3）分区的混合（Mixed Hybridization）</strong>：采用多种推荐机制，并将不同的推荐结果分不同的区显示给用户。其实，Amazon，当当网等很多电子商务网站都是采用这样的方式，用户可以得到很全面的推荐，也更容易找到他们想要的东西。<br>  <strong>（4）分层的混合（Meta-Level Hybridization）</strong>: 采用多种推荐机制，并将一个推荐机制的结果作为另一个的输入，从而综合各个推荐机制的优缺点，得到更加准确的推荐。</p><p><strong>转载</strong>：<a href="https://www.ibm.com/developerworks/cn/web/1103_zhaoct_recommstudy1/index.html?ca=drs-" rel="external nofollow noopener noreferrer" target="_blank">IBM Developer 推荐引擎初探</a></p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;h2 id=&quot;基于人口统计学的推荐&quot;&gt;&lt;a class=&quot;markdownIt-Anchor&quot; href=&quot;#基于人口统计学的推荐&quot;&gt;&lt;/a&gt; 基于人口统计学的推荐&lt;/h2&gt;
-&lt;p&gt; 基于人口统计学的推荐机制（Demographic-based Recommendation）是
-      
-    
-    </summary>
-    
-      <category term="大数据" scheme="http://www.huangbin.fun/categories/%E5%A4%A7%E6%95%B0%E6%8D%AE/"/>
-    
-    
-      <category term="推荐技术" scheme="http://www.huangbin.fun/tags/%E6%8E%A8%E8%8D%90%E6%8A%80%E6%9C%AF/"/>
     
   </entry>
   
