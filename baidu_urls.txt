@@ -1,3 +1,7 @@
+http://www.huangbin.fun/Redis-缓存设计-缓存穿透-雪崩-击穿.html
+http://www.huangbin.fun/Redis-Cluster-故障转移.html
+http://www.huangbin.fun/Redis-Cluster-重定向问题-Moved-Ask重定向.html
+http://www.huangbin.fun/Redis-Cluster-集群伸缩.html
 http://www.huangbin.fun/KMP算法-基于《算法》第四版.html
 http://www.huangbin.fun/Redis-Cluster学习.html
 http://www.huangbin.fun/LeetCode-最长回文子串.html
