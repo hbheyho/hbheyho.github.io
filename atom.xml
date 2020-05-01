@@ -52,8 +52,8 @@
     <title>Redis Cluster 故障转移</title>
     <link href="http://www.huangbin.fun/Redis-Cluster-%E6%95%85%E9%9A%9C%E8%BD%AC%E7%A7%BB.html"/>
     <id>http://www.huangbin.fun/Redis-Cluster-故障转移.html</id>
-    <published>2020-05-01T06:25:11.000Z</published>
-    <updated>2020-05-01T06:47:24.924Z</updated>
+    <published>2020-04-30T06:25:11.000Z</published>
+    <updated>2020-05-01T07:06:04.668Z</updated>
     
     <content type="html"><![CDATA[<h2 id="故障发现"><a class="markdownIt-Anchor" href="#故障发现"></a> 故障发现</h2><ol><li>通过ping/pong消息来实现故障发现：不需要sentinel</li><li>主观下线：某个节点认为另一个节点不可用，“偏见” <img src="/Redis-Cluster-故障转移/主观下线.png" title="主观下线"></li><li>客观下线：当半数以上持有槽的主节点都标记了某节点主观下线<img src="/Redis-Cluster-故障转移/客观下线.png" title="客观下线"></li></ol><ul><li>故障链表可以维护了每个节点对其他节点的&quot;看法&quot;，即认为主观下线与否</li><li>尝试客观下线流程如下：<img src="/Redis-Cluster-故障转移/客观下线流程.png" title="客观下线流程"></li></ul><h2 id="故障恢复"><a class="markdownIt-Anchor" href="#故障恢复"></a> 故障恢复</h2><ol><li>资格检查<br>检查每个从节点与故障主节点的断线时间。超过cluster-node-timeout * cluster-slave-validity-factor(默认10)则取消资格。</li><li>准备选举时间<br>准备选举时间，偏移量更大的从节点拥有延迟更小的选举时间，尽量保证从节点与主节点的数据一致性<img src="/Redis-Cluster-故障转移/选举时间.png" title="选举时间"></li><li>选举投票<img src="/Redis-Cluster-故障转移/选举投票.png" title="选举投票"></li><li>替换主节点</li></ol><ul><li>当前从节点取消复制变为主节点（slaveof no one）</li><li>执行clusterDelSlot撤销故障主节点负责的槽，并执行clusterAddSlot把这些槽分配给新的主节点</li><li>向集群广播自己的pong消息，表明已经替换了故障主节点</li></ul><h2 id="参考资料"><a class="markdownIt-Anchor" href="#参考资料"></a> 参考资料</h2><p>[1] <a href="https://coding.imooc.com/class/151.html" rel="external nofollow noopener noreferrer" target="_blank">https://coding.imooc.com/class/151.html</a></p>]]></content>
     
@@ -80,8 +80,8 @@
     <title>Redis Cluster 重定向问题 - Moved/Ask重定向</title>
     <link href="http://www.huangbin.fun/Redis-Cluster-%E9%87%8D%E5%AE%9A%E5%90%91%E9%97%AE%E9%A2%98-Moved-Ask%E9%87%8D%E5%AE%9A%E5%90%91.html"/>
     <id>http://www.huangbin.fun/Redis-Cluster-重定向问题-Moved-Ask重定向.html</id>
-    <published>2020-05-01T06:20:16.000Z</published>
-    <updated>2020-05-01T06:45:44.555Z</updated>
+    <published>2020-04-28T06:20:16.000Z</published>
+    <updated>2020-05-01T07:05:54.788Z</updated>
     
     <content type="html"><![CDATA[<p>相比于单机redis或使用sentinel来管理的redis主从复制的客户端，Redis cluster的客户端连接更加复杂，需要进行额外的处理。</p><h2 id="moved-重定向"><a class="markdownIt-Anchor" href="#moved-重定向"></a> Moved 重定向</h2><img src="/Redis-Cluster-重定向问题-Moved-Ask重定向/Moved.png" title="Moved"><ol><li>槽命中：直接返回结果</li><li>槽不命中：即当前键命令所请求的键不在当前请求的节点中，则当前节点会向客户端发送一个Moved 重定向，客户端根据Moved 重定向所包含的内容找到目标节点，再一次发送命令。<br>从下面可以看出 php 的槽位9244不在当前节点中，所以会重定向到节点 192.168.2.23:7001中。redis-cli会帮你自动重定向（如果没有集群方式启动，即没加参数 -c，redis-cli不会自动重定向），并且编写程序时，寻找目标节点的逻辑需要交予程序员手动完成。<br><em>cluster keyslot keyName</em>  # 得到keyName的槽<img src="/Redis-Cluster-重定向问题-Moved-Ask重定向/Moved2.png" title="Moved2"></li></ol><h2 id="ask-重定向"><a class="markdownIt-Anchor" href="#ask-重定向"></a> ASK 重定向</h2><p>Ask重定向发生于集群伸缩时，集群伸缩会导致槽迁移，当我们去源节点访问时，此时数据已经可能已经迁移到了目标节点，使用Ask重定向来解决此种情况。<img src="/Redis-Cluster-重定向问题-Moved-Ask重定向/ASK.png" title="ASK"></p><h2 id="smart客户端"><a class="markdownIt-Anchor" href="#smart客户端"></a> smart客户端</h2><p>上述两种重定向的机制使得客户端的实现更加复杂，提供了smart客户端（JedisCluster）来减低复杂性，追求更好的性能。客户端内部负责计算/维护键-&gt; 槽 -&gt; 节点映射，用于快速定位目标节点。<br>实现原理：</p><ol><li>从集群中选取一个可运行节点，使用 cluster slots得到槽和节点的映射关系<img src="/Redis-Cluster-重定向问题-Moved-Ask重定向/映射关系.png" title="映射关系"></li><li>将上述映射关系存到本地，通过映射关系就可以直接对目标节点进行操作（CRC16(key) -&gt; slot -&gt; node），很好地避免了Moved重定向，并为每个节点创建JedisPool</li><li>至此就可以用来进行命令操作<img src="/Redis-Cluster-重定向问题-Moved-Ask重定向/命令操作流程.png" title="命令操作流程"></li></ol><h2 id="参考资料"><a class="markdownIt-Anchor" href="#参考资料"></a> 参考资料</h2><p>[1] <a href="https://coding.imooc.com/class/151.html" rel="external nofollow noopener noreferrer" target="_blank">https://coding.imooc.com/class/151.html</a></p>]]></content>
     
@@ -106,8 +106,8 @@
     <title>Redis Cluster 集群伸缩</title>
     <link href="http://www.huangbin.fun/Redis-Cluster-%E9%9B%86%E7%BE%A4%E4%BC%B8%E7%BC%A9.html"/>
     <id>http://www.huangbin.fun/Redis-Cluster-集群伸缩.html</id>
-    <published>2020-05-01T06:05:21.000Z</published>
-    <updated>2020-05-01T06:43:31.472Z</updated>
+    <published>2020-04-26T06:05:21.000Z</published>
+    <updated>2020-05-01T07:05:41.793Z</updated>
     
     <content type="html"><![CDATA[<h2 id="集群伸缩"><a class="markdownIt-Anchor" href="#集群伸缩"></a> 集群伸缩</h2><p>在已存在的集群中添加和删除集群节点，在集群伸缩的过程中伴随着虚拟槽在节点中的移动</p><h2 id="集群扩容"><a class="markdownIt-Anchor" href="#集群扩容"></a> 集群扩容</h2><ol><li>准备新节点，把新节点配置为集群模式，相关配置信息和其他节点统一，启动后新节点是孤立节点，和集群之间还没有联系</li><li>使用 <em>cluster meet newNodeIP newNodePort</em> 把新节点加入到集群中，当然也可以使用官方的 redis-trib.rb的 相关命令来加入新节点（需要配置Ruby 环境~）。节点加入集群后，可以有两个作用：1. 为它迁移槽和数据实现扩容 ；2. 作为从节点负责故障转移</li><li>若新加入的节点大于一个，还可以进行主从分配， <em>cluster replicate nodeId</em></li><li>迁移槽和数据</li></ol><ul><li>制订迁移计划，每个节点要迁移多少个槽给新节点</li></ul><img src="/Redis-Cluster-集群伸缩/集群扩容.png" title="集群扩容"><ul><li>开始迁移操作<br> a. 对目标节点： <em>cluster setslot {slot} importing {sourceNodeId}</em>  让目标节点准备导入槽的数据<br> b. 对源节点： <em>cluster setslot {slot} migrating {targetNodeId}</em> 让源节点准备迁出槽的数据<br> c. 源节点循环执行  <em>cluster getkeysinslot {slot} {count}</em> 每次获取count个属于槽的键<br> d. 在源节点执行 <em>migrate {targetIp} {targetPort} key 0 {timeout}</em> 命令把指定key迁移，0 表示数据库0<br> e. 重复执行步骤 3 ~ 4直到槽下所有的键数据迁移到目标节点<br> f. 向集群内所有主节点发送  <em>cluster setslot {slot} node {targetNodeId}</em> 命令，告诉所有主节点 槽分配给了目标节点   <img src="/Redis-Cluster-集群伸缩/slot迁移.png" title="slot迁移"></li></ul><p>  上述的迁移操作很是繁琐，可以使用官方提供的redis-trib.rb的相关命令进行操作。使用 redis-trib.rb reshard IP:Port 进行交互模式来完成槽的移动  - <a href="https://www.jianshu.com/p/21f67bd739cc" rel="external nofollow noopener noreferrer" target="_blank">redis-trib工具使用</a></p><h2 id="集群收缩"><a class="markdownIt-Anchor" href="#集群收缩"></a> 集群收缩</h2><ol><li>下线集群节点之前，需要看节点是否持有槽，即是否有数据，若有，则需要迁移到其他节点<br><em>redis-trib.rb reshard --from {downNodeId} --to {migrateNodeId} --slots {slotNumber}  IP:Port</em>，其中的 IP:Port，任意一个节点的 IP:Port都行哦~<img src="/Redis-Cluster-集群伸缩/集群收缩.png" title="集群收缩"></li><li>通知其他所有节点忘记下线节点，<em>cluster forget {downNodeId}</em>_ 或者 <em>redis-trib.rb del-node IP:Port {forgetNodeId}</em> 。若有主从复制，要先下线从节点哦~ <img src="/Redis-Cluster-集群伸缩/集群收缩2.png" title="集群收缩2"></li></ol><h2 id="参考资料"><a class="markdownIt-Anchor" href="#参考资料"></a> 参考资料</h2><p>[1] <a href="https://coding.imooc.com/class/151.html" rel="external nofollow noopener noreferrer" target="_blank">https://coding.imooc.com/class/151.html</a></p>]]></content>
     

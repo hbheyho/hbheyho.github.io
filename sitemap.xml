@@ -2,30 +2,30 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>http://www.huangbin.fun/Redis-%E7%BC%93%E5%AD%98%E8%AE%BE%E8%AE%A1-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F-%E9%9B%AA%E5%B4%A9-%E5%87%BB%E7%A9%BF.html</loc>
-    
-    <lastmod>2020-05-01T06:49:51.586Z</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>http://www.huangbin.fun/Redis-Cluster-%E6%95%85%E9%9A%9C%E8%BD%AC%E7%A7%BB.html</loc>
     
-    <lastmod>2020-05-01T06:47:24.924Z</lastmod>
+    <lastmod>2020-05-01T07:06:04.668Z</lastmod>
     
   </url>
   
   <url>
     <loc>http://www.huangbin.fun/Redis-Cluster-%E9%87%8D%E5%AE%9A%E5%90%91%E9%97%AE%E9%A2%98-Moved-Ask%E9%87%8D%E5%AE%9A%E5%90%91.html</loc>
     
-    <lastmod>2020-05-01T06:45:44.555Z</lastmod>
+    <lastmod>2020-05-01T07:05:54.788Z</lastmod>
     
   </url>
   
   <url>
     <loc>http://www.huangbin.fun/Redis-Cluster-%E9%9B%86%E7%BE%A4%E4%BC%B8%E7%BC%A9.html</loc>
     
-    <lastmod>2020-05-01T06:43:31.472Z</lastmod>
+    <lastmod>2020-05-01T07:05:41.793Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://www.huangbin.fun/Redis-%E7%BC%93%E5%AD%98%E8%AE%BE%E8%AE%A1-%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F-%E9%9B%AA%E5%B4%A9-%E5%87%BB%E7%A9%BF.html</loc>
+    
+    <lastmod>2020-05-01T06:49:51.586Z</lastmod>
     
   </url>
   
