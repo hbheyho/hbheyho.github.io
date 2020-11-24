@@ -1,3 +1,5 @@
+http://www.huangbin.fun/J-U-C之AQS源码学习.html
+http://www.huangbin.fun/对象的共享.html
 http://www.huangbin.fun/经典排序算法.html
 http://www.huangbin.fun/重新认识时间复杂度.html
 http://www.huangbin.fun/小小String对象大大奥秘.html
