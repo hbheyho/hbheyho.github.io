@@ -1,0 +1,171 @@
+<!DOCTYPE html><html lang="en"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta name="description" content="艰难的红黑树学习笔记"><meta name="keywords" content="Java"><meta name="author" content="HB"><meta name="copyright" content="HB"><title>艰难的红黑树学习笔记 | HB's Blog</title><link rel="shortcut icon" href="/MyBlog.ico"><link rel="stylesheet" href="/css/index.css?version=1.6.1"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@latest/css/font-awesome.min.css?version=1.6.1"><meta name="format-detection" content="telephone=no"><meta http-equiv="x-dns-prefetch-control" content="on"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><script>var GLOBAL_CONFIG = { 
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"search.xml","languages":{"hits_empty":"We didn't find any results for the search: ${query}"}},
+  copy: {
+    success: 'Copy successfully',
+    error: 'Copy error',
+    noSupport: 'The browser does not support'
+  }
+} </script></head><body><canvas class="fireworks"></canvas><i class="fa fa-arrow-right" id="toggle-sidebar" aria-hidden="true"></i><div id="sidebar"><div class="toggle-sidebar-info text-center"><span data-toggle="Toggle article">Toggle site</span><hr></div><div class="sidebar-toc"><div class="sidebar-toc__title">Catalog</div><div class="sidebar-toc__progress"><span class="progress-notice">You've read</span><span class="progress-num">0</span><span class="progress-percentage">%</span><div class="sidebar-toc__progress-bar"></div></div><div class="sidebar-toc__content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#红黑树定义"><span class="toc-number">1.</span> <span class="toc-text"> 红黑树定义</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#红黑树自平衡操作"><span class="toc-number">2.</span> <span class="toc-text"> 红黑树自平衡操作</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#左旋"><span class="toc-number">2.1.</span> <span class="toc-text"> 左旋</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#右旋"><span class="toc-number">2.2.</span> <span class="toc-text"> 右旋</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#变色"><span class="toc-number">2.3.</span> <span class="toc-text"> 变色</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#红黑树查找"><span class="toc-number">3.</span> <span class="toc-text"> 红黑树查找</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#红黑树插入"><span class="toc-number">4.</span> <span class="toc-text"> 红黑树插入</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#插入位置查找"><span class="toc-number">4.1.</span> <span class="toc-text"> 插入位置查找</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#插入节点后的自平衡"><span class="toc-number">4.2.</span> <span class="toc-text"> 插入节点后的自平衡</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#情景1-红黑树为空树"><span class="toc-number">4.2.1.</span> <span class="toc-text"> 情景1 - 红黑树为空树</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#情景2-插入节点的key已经存在"><span class="toc-number">4.2.2.</span> <span class="toc-text"> 情景2 - 插入节点的Key已经存在</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#情景3-插入节点的父节点为黑色节点"><span class="toc-number">4.2.3.</span> <span class="toc-text"> 情景3 - 插入节点的父节点为黑色节点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#情景4-插入节点的父节点为红色节点"><span class="toc-number">4.2.4.</span> <span class="toc-text"> 情景4 - 插入节点的父节点为红色节点</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#情景41父节点的兄弟节点存在并且为红色节点"><span class="toc-number">4.2.4.1.</span> <span class="toc-text"> 情景4.1：父节点的兄弟节点存在并且为红色节点</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#情景42父节点的兄弟节点不存在或为黑色节点并且插入节点的父亲节点是祖父节点的左子节点"><span class="toc-number">4.2.4.2.</span> <span class="toc-text"> 情景4.2：父节点的兄弟节点不存在或为黑色节点，并且插入节点的父亲节点是祖父节点的左子节点</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#情景421插入节点是父节点的左子节点"><span class="toc-number">4.2.4.2.1.</span> <span class="toc-text"> 情景4.2.1：插入节点是父节点的左子节点</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#情景422插入节点是父节点的右子节点"><span class="toc-number">4.2.4.2.2.</span> <span class="toc-text"> 情景4.2.2：插入节点是父节点的右子节点</span></a></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#情景43父节点的兄弟节点不存在或为黑色节点并且插入节点的父亲节点是祖父节点的右子节点"><span class="toc-number">4.2.4.3.</span> <span class="toc-text"> 情景4.3：父节点的兄弟节点不存在或为黑色节点，并且插入节点的父亲节点是祖父节点的右子节点</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#情景431插入节点是父节点的右子节点"><span class="toc-number">4.2.4.3.1.</span> <span class="toc-text"> 情景4.3.1：插入节点是父节点的右子节点</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#情景432插入节点是父节点的左子节点"><span class="toc-number">4.2.4.3.2.</span> <span class="toc-text"> 情景4.3.2：插入节点是父节点的左子节点</span></a></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#示例"><span class="toc-number">4.2.5.</span> <span class="toc-text"> 示例：</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#红黑树删除"><span class="toc-number">5.</span> <span class="toc-text"> 红黑树删除</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#删除位置查找"><span class="toc-number">5.1.</span> <span class="toc-text"> 删除位置查找</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#删除之后自平衡"><span class="toc-number">5.2.</span> <span class="toc-text"> 删除之后自平衡</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#情景1-替换节点是红色节点"><span class="toc-number">5.2.1.</span> <span class="toc-text"> 情景1 - 替换节点是红色节点</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#情景2-替换节点为黑色节点"><span class="toc-number">5.2.2.</span> <span class="toc-text"> 情景2 - 替换节点为黑色节点</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#情景21替换节点是其父节点的左节点"><span class="toc-number">5.2.2.1.</span> <span class="toc-text"> 情景2.1：替换节点是其父节点的左节点</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#情景211替换节点的兄弟节点是红色节点"><span class="toc-number">5.2.2.1.1.</span> <span class="toc-text"> 情景2.1.1：替换节点的兄弟节点是红色节点</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#情景212替换节点的兄弟节点是黑色"><span class="toc-number">5.2.2.1.2.</span> <span class="toc-text"> 情景2.1.2：替换节点的兄弟节点是黑色</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#情景2121替换节点的兄弟节点的右子节点是红色左子节点为任意颜色"><span class="toc-number">5.2.2.1.2.1.</span> <span class="toc-text"> 情景2.1.2.1：替换节点的兄弟节点的右子节点是红色，左子节点为任意颜色</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#情景2122替换节点的兄弟节点的右子节点是黑色左子节点为红色"><span class="toc-number">5.2.2.1.2.2.</span> <span class="toc-text"> 情景2.1.2.2：替换节点的兄弟节点的右子节点是黑色，左子节点为红色</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#情景2123替换节点的兄弟节点的子节点都是黑色"><span class="toc-number">5.2.2.1.2.3.</span> <span class="toc-text"> 情景2.1.2.3：替换节点的兄弟节点的子节点都是黑色</span></a></li></ol></li></ol></li><li class="toc-item toc-level-4"><a class="toc-link" href="#情景22替换节点是其父节点的右节点"><span class="toc-number">5.2.2.2.</span> <span class="toc-text"> 情景2.2：替换节点是其父节点的右节点</span></a><ol class="toc-child"><li class="toc-item toc-level-5"><a class="toc-link" href="#情景221替换节点的兄弟节点是红色"><span class="toc-number">5.2.2.2.1.</span> <span class="toc-text"> 情景2.2.1：替换节点的兄弟节点是红色</span></a></li><li class="toc-item toc-level-5"><a class="toc-link" href="#情景222替换节点的兄弟节点是黑色"><span class="toc-number">5.2.2.2.2.</span> <span class="toc-text"> 情景2.2.2：替换节点的兄弟节点是黑色</span></a><ol class="toc-child"><li class="toc-item toc-level-6"><a class="toc-link" href="#情景2221替换节点的兄弟节点的左子节点是红色右子节点为任意颜色"><span class="toc-number">5.2.2.2.2.1.</span> <span class="toc-text"> 情景2.2.2.1：替换节点的兄弟节点的左子节点是红色，右子节点为任意颜色</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#情景2222替换节点的兄弟节点的左子节点是黑色右子节点为红色"><span class="toc-number">5.2.2.2.2.2.</span> <span class="toc-text"> 情景2.2.2.2：替换节点的兄弟节点的左子节点是黑色，右子节点为红色</span></a></li><li class="toc-item toc-level-6"><a class="toc-link" href="#情景2223替换节点的兄弟节点的子节点都是黑色"><span class="toc-number">5.2.2.2.2.3.</span> <span class="toc-text"> 情景2.2.2.3：替换节点的兄弟节点的子节点都是黑色</span></a></li></ol></li></ol></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#示例-2"><span class="toc-number">5.2.3.</span> <span class="toc-text"> 示例：</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#参考链接"><span class="toc-number">6.</span> <span class="toc-text"> 参考链接</span></a></li></ol></div></div><div class="author-info hide"><div class="author-info__avatar text-center"><img src="https://s2.ax1x.com/2019/07/30/eJEjKO.jpg"></div><div class="author-info__name text-center">HB</div><div class="author-info__description text-center">记录自己填坑之路（又称踩坑大全:D）和喜欢的一些东西~</div><div class="follow-button"><a href="https://github.com/hbheyho" rel="external nofollow noopener noreferrer" target="_blank">Follow Me</a></div><hr><div class="author-info-articles"><a class="author-info-articles__archives article-meta" href="/archives"><span class="pull-left">Articles</span><span class="pull-right">39</span></a><a class="author-info-articles__tags article-meta" href="/tags"><span class="pull-left">Tags</span><span class="pull-right">13</span></a><a class="author-info-articles__categories article-meta" href="/categories"><span class="pull-left">Categories</span><span class="pull-right">10</span></a></div></div></div><div id="content-outer"><div id="top-container" style="background-image: url(https://s2.ax1x.com/2019/07/30/eJVZqg.png)"><div id="page-header"><span class="pull-left"> <a id="site-name" href="/">HB's Blog</a></span><i class="fa fa-bars toggle-menu pull-right" aria-hidden="true"></i><span class="pull-right menus">   <a class="site-page" href="/">Home</a><a class="site-page" href="/archives">Archives</a><a class="site-page" href="/tags">Tags</a><a class="site-page" href="/categories">Categories</a><a class="site-page" href="/gallery">Gallery</a></span><span class="pull-right"><a class="site-page social-icon search"><i class="fa fa-search"></i><span> Search</span></a></span></div><div id="post-info"><div id="post-title">艰难的红黑树学习笔记</div><div id="post-meta"><time class="post-meta__date"><i class="fa fa-calendar" aria-hidden="true"></i> 2021-03-10</time><span class="post-meta__separator">|</span><i class="fa fa-inbox post-meta__icon" aria-hidden="true"></i><a class="post-meta__categories" href="/categories/Java学习/">Java学习</a><div class="post-meta-wordcount"><span>Word count: </span><span class="word-count">3.1k</span><span class="post-meta__separator">|</span><span>Reading time: 9 min</span></div></div></div></div><div class="layout" id="content-inner"><article id="post"><div class="article-container" id="post-content"><h1 id="红黑树定义"><a class="markdownIt-Anchor" href="#红黑树定义"></a> 红黑树定义</h1>
+<p>红黑树是自平衡的二叉查找树，在进行插入和删除等可能会破坏树的平衡的操作时，需要重新自处理达到平衡状态。<br>
+红黑树是一种含有红黑结点并能自平衡的二叉查找树。它必须满足下面性质：</p>
+<ol>
+<li>每个节点要么是黑色，要么是红色。</li>
+<li>根节点是黑色。</li>
+<li>每个叶子节点（NIL）是黑色，叶子节点是为NULL的节点。</li>
+<li>每个红色节点的两个子节点一定都是黑色。</li>
+<li><strong>任意一结点到每个叶子结点的路径都包含数量相同的黑结点。</strong></li>
+<li>如果一个结点存在黑子节点，那么该节点肯定有两个子节点，因为需要满足性质5</li>
+</ol>
+<p>需要注意的是，红黑树并不是一个完美平衡二叉查找树，即左右子树的高度会大于1，但左子树和右子树的黑节点的层数是相等的，称为黑色完美平衡。<br>
+如下是一个红黑树，并且图中给出一些节点定义：</p>
+<img src="/艰难的红黑树学习笔记/相关定义.jpg" title="相关定义">
+<h1 id="红黑树自平衡操作"><a class="markdownIt-Anchor" href="#红黑树自平衡操作"></a> 红黑树自平衡操作</h1>
+<h2 id="左旋"><a class="markdownIt-Anchor" href="#左旋"></a> 左旋</h2>
+<p>以某个节点作为支点（旋转节点），其右子节点变为旋转节点的父节点，旋转节点变为其右子节点的左子节点，右子节点的左子节点变为旋转节点的右子节点，旋转节点的左子结点保持不变。<br>
+左旋只影响了 <strong>旋转节点和其右子树的结构</strong> ，其他保持不变，并且不会影响父节以上的结构，属于 <strong>局部调整</strong>。</p>
+<img src="/艰难的红黑树学习笔记/左旋.png" title="左旋">
+<h2 id="右旋"><a class="markdownIt-Anchor" href="#右旋"></a> 右旋</h2>
+<p>以某个节点作为支点（旋转节点），其左子节点变为旋转节点的父节点，旋转节点变为其左子节点的右子节点，左子节点的右子节点变为旋转节点的左子节点，旋转节点的右子结点保持不变。<br>
+右旋只影响了 <strong>旋转节点和其左子树的结构</strong>，其他保持不变，并且不会影响父节以上的结构，属于 <strong>局部调整</strong>。</p>
+<img src="/艰难的红黑树学习笔记/youxuan.png" title="右旋">
+<h2 id="变色"><a class="markdownIt-Anchor" href="#变色"></a> 变色</h2>
+<p>节点从黑变为红，红变为黑。</p>
+<h1 id="红黑树查找"><a class="markdownIt-Anchor" href="#红黑树查找"></a> 红黑树查找</h1>
+<p>因为红黑树是一颗二叉平衡树，并且查找不会破坏树的平衡，所以查找跟二叉平衡树的查找无异。查找时间复杂度O(log N)。</p>
+<img src="/艰难的红黑树学习笔记/chazhao.png" title="查找流程图">
+<h1 id="红黑树插入"><a class="markdownIt-Anchor" href="#红黑树插入"></a> 红黑树插入</h1>
+<p>红黑树插入包括两部分：1. 插入位置查找；2. 插入节点之后的自平衡。</p>
+<h2 id="插入位置查找"><a class="markdownIt-Anchor" href="#插入位置查找"></a> 插入位置查找</h2>
+<p>查找位置查找操作和普通查找类似，流程图如下：</p>
+<img src="/艰难的红黑树学习笔记/charuchazhao.png" title="查找流程图">
+<h2 id="插入节点后的自平衡"><a class="markdownIt-Anchor" href="#插入节点后的自平衡"></a> 插入节点后的自平衡</h2>
+<p>插入自平衡所面临以下几种情况：</p>
+<img src="/艰难的红黑树学习笔记/charuqingkuang.png" title="插入自平衡情况">
+<p>插入的节点应为 <strong>红色节点</strong>。红色在父结点（如果存在）为黑色结点时，红黑树的黑色平衡没被破坏，不需要做自平衡操作。但如果插入结点是黑色，那么插入位置所在的子树黑色结点总是多1，必须做自平衡。<br>
+以下统一将上图中的叔叔节点描述为兄弟节点。</p>
+<h3 id="情景1-红黑树为空树"><a class="markdownIt-Anchor" href="#情景1-红黑树为空树"></a> 情景1 - 红黑树为空树</h3>
+<p>红黑树为空树的情况下，直接把插入节点作为根节点，并把节点颜色变为黑色。</p>
+<h3 id="情景2-插入节点的key已经存在"><a class="markdownIt-Anchor" href="#情景2-插入节点的key已经存在"></a> 情景2 - 插入节点的Key已经存在</h3>
+<p>插入节点的Key已经存在，此时红黑树已经是平衡的，那么只需要更新当前值为插入节点的值，并把插入节点的颜色改为当前节点的颜色。</p>
+<h3 id="情景3-插入节点的父节点为黑色节点"><a class="markdownIt-Anchor" href="#情景3-插入节点的父节点为黑色节点"></a> 情景3 - 插入节点的父节点为黑色节点</h3>
+<p>插入节点的父节点为黑色节点时，将插入节点的颜色变为红色，直接插入即可，因为红色的节点并不会影响黑色完美平衡。</p>
+<h3 id="情景4-插入节点的父节点为红色节点"><a class="markdownIt-Anchor" href="#情景4-插入节点的父节点为红色节点"></a> 情景4 - 插入节点的父节点为红色节点</h3>
+<p>插入节点的父亲节点是红色节点时，需要分多次情况讨论。<br>
+需要注意的是：当插入节点的父亲节点是红色节点时，则一定有祖父节点，因为红黑树的根节点规定为黑色节点。</p>
+<h4 id="情景41父节点的兄弟节点存在并且为红色节点"><a class="markdownIt-Anchor" href="#情景41父节点的兄弟节点存在并且为红色节点"></a> 情景4.1：父节点的兄弟节点存在并且为红色节点</h4>
+<p>父节点为红色且兄弟节点也为红色，根据红黑树性质4可知，祖父节点一定为黑色节点。<br>
+<strong>自平衡操作</strong>：将P和S设置黑色；PP设置为红色；将PP设置为当前插入节点，继续自底向上进行自平衡（因为PP的父亲节点可能为红色节点，这样就违反了红黑树性质4）。</p>
+<img src="/艰难的红黑树学习笔记/4.1-1.png" title="情景4.1 - 1">
+<img src="/艰难的红黑树学习笔记/4.1-2.png" title="情景4.1 - 2">
+<p>特殊情况：PP刚好为根结点时，那么根据性质2，必须把PP重新设为黑色，那么树的红黑结构变为：黑黑红。换句话说，从根结点到叶子结点的路径中，黑色结点增加了。这也是唯一一种会增加红黑树黑色结点层数的插入情景。</p>
+<h4 id="情景42父节点的兄弟节点不存在或为黑色节点并且插入节点的父亲节点是祖父节点的左子节点"><a class="markdownIt-Anchor" href="#情景42父节点的兄弟节点不存在或为黑色节点并且插入节点的父亲节点是祖父节点的左子节点"></a> 情景4.2：父节点的兄弟节点不存在或为黑色节点，并且插入节点的父亲节点是祖父节点的左子节点</h4>
+<p>上述情况又可以分为下述两种情况：</p>
+<h5 id="情景421插入节点是父节点的左子节点"><a class="markdownIt-Anchor" href="#情景421插入节点是父节点的左子节点"></a> 情景4.2.1：插入节点是父节点的左子节点</h5>
+<p><strong>自平衡操作</strong>：将P设为黑色；将PP设为红色；对PP进行右旋</p>
+<img src="/艰难的红黑树学习笔记/4.2.1.png" title="情景4.2.1">
+<h5 id="情景422插入节点是父节点的右子节点"><a class="markdownIt-Anchor" href="#情景422插入节点是父节点的右子节点"></a> 情景4.2.2：插入节点是父节点的右子节点</h5>
+<p><strong>自平衡操作</strong>：对P进行左旋；将P设置为插入节点；得到情景4.2.1</p>
+<img src="/艰难的红黑树学习笔记/4.2.2.png" title="情景4.2.2"> 
+<h4 id="情景43父节点的兄弟节点不存在或为黑色节点并且插入节点的父亲节点是祖父节点的右子节点"><a class="markdownIt-Anchor" href="#情景43父节点的兄弟节点不存在或为黑色节点并且插入节点的父亲节点是祖父节点的右子节点"></a> 情景4.3：父节点的兄弟节点不存在或为黑色节点，并且插入节点的父亲节点是祖父节点的右子节点</h4>
+<h5 id="情景431插入节点是父节点的右子节点"><a class="markdownIt-Anchor" href="#情景431插入节点是父节点的右子节点"></a> 情景4.3.1：插入节点是父节点的右子节点</h5>
+<p><strong>自平衡操作</strong>：将P设为黑色；将PP设置为红色；对PP进行左旋</p>
+<img src="/艰难的红黑树学习笔记/4.3.1.png" title="情景4.3.1">
+<h5 id="情景432插入节点是父节点的左子节点"><a class="markdownIt-Anchor" href="#情景432插入节点是父节点的左子节点"></a> 情景4.3.2：插入节点是父节点的左子节点</h5>
+<p><strong>自平衡操作</strong>：对P进行右旋；将P设置为插入节点；得到情景4.3.1</p>
+<img src="/艰难的红黑树学习笔记/4.3.2.png" title="情景4.3.2">
+<h3 id="示例"><a class="markdownIt-Anchor" href="#示例"></a> 示例：</h3>
+<p>画出插入自平衡流程图：</p>
+<img src="/艰难的红黑树学习笔记/xiti1.png" title="示例1">
+<img src="/艰难的红黑树学习笔记/jieti1.jpg" title="示例解答">
+<h1 id="红黑树删除"><a class="markdownIt-Anchor" href="#红黑树删除"></a> 红黑树删除</h1>
+<h2 id="删除位置查找"><a class="markdownIt-Anchor" href="#删除位置查找"></a> 删除位置查找</h2>
+<p>查找位置查找操作和普通查找类似，可以复用。</p>
+<h2 id="删除之后自平衡"><a class="markdownIt-Anchor" href="#删除之后自平衡"></a> 删除之后自平衡</h2>
+<p>完成删除后，需要找到一个替代节点去替代删除之后的节点位置。主要存在以下三种替代情况：</p>
+<ol>
+<li>删除结点无子节点，直接删除；</li>
+<li>若删除节点只有一个子节点，用子节点替换删除节点；</li>
+<li>若删除节点有两个子节点，用后继节点（大于删除节点的最小节点）替换删除节点。</li>
+</ol>
+<p>下面提供一个找节点的前驱节点和后继节点方法（中序遍历的前序节点和后继节点）：</p>
+<img src="/艰难的红黑树学习笔记/paixu.png" title="寻找前序和后继">
+<p>根据上面所描述的替换思路，可得到一个重要的删除思路： <strong>要删除某个节点，可以和它的替换节点交换（元素值的交换），从而将删除节点操作变为删除替换节点的操作，而替换节点总是在二叉树末端，达到简化删除效果。也即上述所描述的情况都可以转为情况1进行删除操作。</strong><br>
+例如：要删除P节点，P节点的替换节点为R节点（将替换节点R放置在P处，也是符合二叉查找树定义的），那么可以通过删除替换节点R来完成删除操作。当红黑树达到平衡之后，将替换节点R与删除节点P的元素值相互交换，再删除替换节点R，即可完成最后的删除操作。</p>
+<p>删除自平衡所面临以下几种情况：</p>
+<img src="/艰难的红黑树学习笔记/shanchuqingjing.png" title="删除情景">
+<p>为了更好理解，做如下约定：</p>
+<img src="/艰难的红黑树学习笔记/yueding.png" title="约定">
+<p>灰色节点表示它可以是红色也可以是黑色。<br>
+R是替代节点，在删除前，它还在原来所在位置参与树的子平衡，平衡后再与删除节点的元素值进行交换，最后将R节点删除，删除完成。</p>
+<h3 id="情景1-替换节点是红色节点"><a class="markdownIt-Anchor" href="#情景1-替换节点是红色节点"></a> 情景1 - 替换节点是红色节点</h3>
+<p>替换节点和删除节点的元素值相互交换后，由于替换结点时红色，删除也了不会影响红黑树的平衡，所以直接删除。<br>
+<strong>自平衡操作</strong>：交换替换节点和删除节点的值即可完成自平衡</p>
+<h3 id="情景2-替换节点为黑色节点"><a class="markdownIt-Anchor" href="#情景2-替换节点为黑色节点"></a> 情景2 - 替换节点为黑色节点</h3>
+<h4 id="情景21替换节点是其父节点的左节点"><a class="markdownIt-Anchor" href="#情景21替换节点是其父节点的左节点"></a> 情景2.1：替换节点是其父节点的左节点</h4>
+<h5 id="情景211替换节点的兄弟节点是红色节点"><a class="markdownIt-Anchor" href="#情景211替换节点的兄弟节点是红色节点"></a> 情景2.1.1：替换节点的兄弟节点是红色节点</h5>
+<p>根据性质4，兄弟结点的父结点和子结点肯定为黑色。<br>
+<strong>自平衡操作</strong>：将S设为黑色；将P设为红色；对P进行左旋得到情景2.1.2.3</p>
+<img src="/艰难的红黑树学习笔记/2.2.1.png" title="2.2.1">
+<h5 id="情景212替换节点的兄弟节点是黑色"><a class="markdownIt-Anchor" href="#情景212替换节点的兄弟节点是黑色"></a> 情景2.1.2：替换节点的兄弟节点是黑色</h5>
+<p>当兄弟节点为黑时，其父节点和子节点的具体颜色也无法确定，又分为多种情况：</p>
+<h6 id="情景2121替换节点的兄弟节点的右子节点是红色左子节点为任意颜色"><a class="markdownIt-Anchor" href="#情景2121替换节点的兄弟节点的右子节点是红色左子节点为任意颜色"></a> 情景2.1.2.1：替换节点的兄弟节点的右子节点是红色，左子节点为任意颜色</h6>
+<p>即将删除的左子树的一个黑色节点，显然左子树的黑色节点少1，然而右子树又有红色节点，那么我们直接向右子树&quot;借&quot;个红色个点来补充黑色节点。<br>
+<strong>自平衡操作</strong>：将S设置为P的颜色；将P设为黑色；SR设置为黑色；对P进行左旋</p>
+<img src="/艰难的红黑树学习笔记/2.1.2.1.png" title="2.1.2.1">
+<p>平衡后的红黑树怎么不满足红黑树的性质？R是即将替换的，它还参与树的自平衡，平衡后再交换到删除结点的位置，所以R最终可以看作是删除的。另外可以分别是考虑到第一次替换和自底向上处理的情况，如果只考虑第一次替换的情况，根据红黑树性质，SL肯定是红色或为Nil，所以最终结果树是平衡的。如果是自底向上处理的情况，同样，每棵子树都保持平衡状态，最终整棵树肯定是平衡的。</p>
+<h6 id="情景2122替换节点的兄弟节点的右子节点是黑色左子节点为红色"><a class="markdownIt-Anchor" href="#情景2122替换节点的兄弟节点的右子节点是黑色左子节点为红色"></a> 情景2.1.2.2：替换节点的兄弟节点的右子节点是黑色，左子节点为红色</h6>
+<p>兄弟节点所在的子树有红色节点，我们总是可以向兄弟子树借个红色节点过来，显然该情景可以转换为情景2.1.2.1。<br>
+<strong>自平衡操作</strong>：将S设置为红色；SL设置为黑色；对P进行右旋；得到情景2.1.2.1</p>
+<img src="/艰难的红黑树学习笔记/2.1.2.2.png" title="2.1.2.2">
+<h6 id="情景2123替换节点的兄弟节点的子节点都是黑色"><a class="markdownIt-Anchor" href="#情景2123替换节点的兄弟节点的子节点都是黑色"></a> 情景2.1.2.3：替换节点的兄弟节点的子节点都是黑色</h6>
+<p>把兄弟节点设为红色，再把父节点当作替代节点，自底向上处理，去找父节点的兄弟节点去&quot;借&quot;。<br>
+<strong>自平衡操作</strong>：将S设置为红色；将P作为新得替换节点；重新进行删除节点情景考虑<br>
+<img src="/艰难的红黑树学习笔记/2.1.2.3.png" title="2.1.2.3"></p>
+<h4 id="情景22替换节点是其父节点的右节点"><a class="markdownIt-Anchor" href="#情景22替换节点是其父节点的右节点"></a> 情景2.2：替换节点是其父节点的右节点</h4>
+<p>情景2.2 的操作可以看作为情景2.1的相反操作。</p>
+<h5 id="情景221替换节点的兄弟节点是红色"><a class="markdownIt-Anchor" href="#情景221替换节点的兄弟节点是红色"></a> 情景2.2.1：替换节点的兄弟节点是红色</h5>
+<p><strong>自平衡操作</strong>：将S设为黑色；将P设为红色；对P进行右旋得到情景2.2.2.3</p>
+<img src="/艰难的红黑树学习笔记/2.2.1.png" title="2.2.1">
+<h5 id="情景222替换节点的兄弟节点是黑色"><a class="markdownIt-Anchor" href="#情景222替换节点的兄弟节点是黑色"></a> 情景2.2.2：替换节点的兄弟节点是黑色</h5>
+<h6 id="情景2221替换节点的兄弟节点的左子节点是红色右子节点为任意颜色"><a class="markdownIt-Anchor" href="#情景2221替换节点的兄弟节点的左子节点是红色右子节点为任意颜色"></a> 情景2.2.2.1：替换节点的兄弟节点的左子节点是红色，右子节点为任意颜色</h6>
+<p><strong>自平衡操作</strong>：将S设置为P的颜色；SL设置为黑色；将P设为黑色；对P进行右旋</p>
+<img src="/艰难的红黑树学习笔记/2.2.2.1.png" title="2.2.2.1">
+<h6 id="情景2222替换节点的兄弟节点的左子节点是黑色右子节点为红色"><a class="markdownIt-Anchor" href="#情景2222替换节点的兄弟节点的左子节点是黑色右子节点为红色"></a> 情景2.2.2.2：替换节点的兄弟节点的左子节点是黑色，右子节点为红色</h6>
+<p><strong>自平衡操作</strong>：将S设置为红色；SR设置为黑色；对P进行左旋；得到情景2.2.2.1</p>
+<img src="/艰难的红黑树学习笔记/2.2.2.2.png" title="2.2.2.2">
+<h6 id="情景2223替换节点的兄弟节点的子节点都是黑色"><a class="markdownIt-Anchor" href="#情景2223替换节点的兄弟节点的子节点都是黑色"></a> 情景2.2.2.3：替换节点的兄弟节点的子节点都是黑色</h6>
+<p><strong>自平衡操作</strong>：将S设置为红色；将P作为新得替换节点；重新进行删除节点情景考虑</p>
+<img src="/艰难的红黑树学习笔记/2.2.2.3.png" title="2.2.2.3">
+<h3 id="示例-2"><a class="markdownIt-Anchor" href="#示例-2"></a> 示例：</h3>
+<p>画出删除自平衡流程图：</p>
+<img src="/艰难的红黑树学习笔记/timu2.png" title="示例二">
+<img src="/艰难的红黑树学习笔记/jieti2.jpg" title="示例解答">
+<h1 id="参考链接"><a class="markdownIt-Anchor" href="#参考链接"></a> 参考链接</h1>
+<ol>
+<li><a href="https://www.jianshu.com/p/e136ec79235c" rel="external nofollow noopener noreferrer" target="_blank">https://www.jianshu.com/p/e136ec79235c</a></li>
+</ol>
+</div></article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta">Author: </span><span class="post-copyright-info"><a href="mailto:undefined" rel="external nofollow noopener noreferrer" target="_blank">HB</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta">Link: </span><span class="post-copyright-info"><a href="http://www.huangbin.fun/艰难的红黑树学习笔记.html">http://www.huangbin.fun/艰难的红黑树学习笔记.html</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta">Copyright Notice: </span><span class="post-copyright-info">All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="external nofollow noopener noreferrer" target="_blank">CC BY-NC-SA 4.0</a> unless stating additionally.</span></div></div><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Java/">Java</a></div><nav id="pagination"><div class="next-post pull-right"><a href="/J-U-C之并发容器-CopyOnWriteArrayList-ConcurrentHashMap.html"><span>J.U.C之并发容器(CopyOnWriteArrayList, ConcurrentHashMap)</span><i class="fa fa-chevron-right"></i></a></div></nav><div id="vcomment"></div><script src="https://cdn1.lncld.net/static/js/3.0.4/av-min.js"></script><script src="https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js"></script><script>var notify = 'true' == true ? true : false;
+var verify = 'true' == true ? true : false;
+var GUEST_INFO = ['nick','mail','link'];
+var guest_info = 'nick,mail,link'.split(',').filter(function(item){
+  return GUEST_INFO.indexOf(item) > -1
+});
+guest_info = guest_info.length == 0 ? GUEST_INFO :guest_info;
+window.valine = new Valine({
+  el:'#vcomment',
+  notify:notify,
+  verify:verify,
+  appId:'OsrlEL0GyLWhwM5Xotg4xfqf-gzGzoHsz',
+  appKey:'SoCJQuXAiFLxpAUwilquruNA',
+  placeholder:'来呀~快来评论呀~',
+  avatar:'monsterid',
+  guest_info:guest_info,
+  pageSize:'10',
+  lang: 'en'
+})</script></div></div><footer class="footer-bg" style="background-image: url(https://s2.ax1x.com/2019/07/30/eJVZqg.png)"><div class="layout" id="footer"><div class="copyright">&copy;2019 - 2021 By HB</div><div class="framework-info"><span>Driven - </span><a href="http://hexo.io" rel="external nofollow noopener noreferrer" target="_blank"><span>Hexo</span></a><span class="footer-separator">|</span><span>Theme - </span><a href="https://github.com/Molunerfinn/hexo-theme-melody" rel="external nofollow noopener noreferrer" target="_blank"><span>Melody</span></a></div><div class="footer_custom_text">Hi, welcome to my <a href="https://hbheyho.github.io/" rel="external nofollow noopener noreferrer" target="_blank">blog</a>!</div><div class="busuanzi"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><span id="busuanzi_container_page_pv"><i class="fa fa-file"></i><span id="busuanzi_value_page_pv"></span><span></span></span></div></div></footer><i class="fa fa-arrow-up" id="go-up" aria-hidden="true"></i><script src="https://cdn.jsdelivr.net/npm/animejs@latest/anime.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jquery@latest/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@latest/dist/jquery.fancybox.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@latest/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-ui-pack@latest/velocity.ui.min.js"></script><script src="/js/utils.js?version=1.6.1"></script><script src="/js/fancybox.js?version=1.6.1"></script><script src="/js/sidebar.js?version=1.6.1"></script><script src="/js/copy.js?version=1.6.1"></script><script src="/js/fireworks.js?version=1.6.1"></script><script src="/js/transition.js?version=1.6.1"></script><script src="/js/scroll.js?version=1.6.1"></script><script src="/js/head.js?version=1.6.1"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex@latest/dist/katex.min.css"><script src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css"><script src="/js/katex.js"></script><script src="/js/search/local-search.js"></script><script>if(/Android|webOS|iPhone|iPod|iPad|BlackBerry/i.test(navigator.userAgent)) {
+  $('#nav').addClass('is-mobile')
+  $('footer').addClass('is-mobile')
+  $('#top-container').addClass('is-mobile')
+}</script><div class="search-dialog" id="local-search"><div class="search-dialog__title" id="local-search-title">Local search</div><div id="local-input-panel"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="Search for Posts"></div></div></div><hr><div id="local-search-results"><div id="local-hits"></div><div id="local-stats"><div class="local-search-stats__hr" id="hr"><span>Powered by</span> <a href="https://github.com/wzpan/hexo-generator-search" style="color:#49B1F5;" rel="external nofollow noopener noreferrer" target="_blank">hexo-generator-search</a></div></div></div><span class="search-close-button"><i class="fa fa-times"></i></span></div><div class="search-mask"></div></body></html>
